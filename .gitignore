@@ -1,0 +1,5 @@
+
+# --- GUI : fichiers de configuration sensibles ---
+gui/config/com_config.json
+gui/config/users.json
+gui/config/password.txt
