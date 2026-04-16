@@ -24,7 +24,7 @@ import json
 import os
 from datetime import datetime
 
-cat > gui/src/GUI_Master.py << 'EOF'
+
 """
 GUI_Master.py
 -------------
@@ -89,7 +89,7 @@ class RootGUI():
         self.data   = data
 
         # Chemin vers le fichier de gestion des utilisateurs
-        self.users_file = os.path.join(os.path.dirname(__file__), "users.json")
+        self.users_file = os.path.join(os.path.dirname(__file__), "..", "config", "users.json")
 
         # Construction des cadres de l'interface
         self._build_login_frame()
@@ -227,8 +227,8 @@ class RootGUI():
         Returns:
             str : mot de passe lu, ou '1234' par défaut si le fichier est absent.
         """
-        if os.path.exists("password.txt"):
-            with open("password.txt", "r") as f:
+        if os.path.exists(os.path.join(os.path.dirname(__file__), "..", "config", "password.txt")):
+            with open(os.path.join(os.path.dirname(__file__), "..", "config", "password.txt"), "r") as f:
                 return f.read().strip()
         return "1234"
 
@@ -1019,8 +1019,6 @@ class ConnGUI():
         """Active ou désactive la sauvegarde CSV selon l'état de la case à cocher."""
         self.save = not self.save
 
-
-cat >> gui/src/GUI_Master.py << 'EOF'
 
 # ==============================================================================
 # DisGUI — Gestionnaire des graphiques Matplotlib
