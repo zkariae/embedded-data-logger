@@ -3,3 +3,10 @@
 gui/config/com_config.json
 gui/config/users.json
 gui/config/password.txt
+
+# Build files
+firmware/build/
+*.o
+*.elf
+*.hex
+*.map
