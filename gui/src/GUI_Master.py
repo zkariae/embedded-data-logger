@@ -23,6 +23,7 @@ from functools import partial
 import json
 import os
 from datetime import datetime
+from logger_config import setup_logger
 
 
 """
@@ -100,6 +101,8 @@ class RootGUI():
 
         # Interception de la fermeture de la fenêtre (clic sur la croix)
         self.root.protocol("WM_DELETE_WINDOW", self.close_window)
+        
+        self.logger = setup_logger("RootGUI")
 
     # ------------------------------------------------------------------
     # Construction des widgets
@@ -411,14 +414,14 @@ class RootGUI():
         la fenêtre principale Tkinter.
         Appelée lors du clic sur la croix de fermeture.
         """
-        print("[RootGUI] Fermeture de l'application.")
+        self.logger.info("Fermeture de l'application.")
         self.root.destroy()
         try:
             self.serial.serial_disconnect(self)
             self.serial.serial_close(self)
             self.serial.threading = False
         except Exception as e:
-            print(f"[RootGUI] Erreur lors de la fermeture : {e}")
+            self.logger.error(f"Erreur fermeture : {e}")
 
 
 
@@ -493,6 +496,8 @@ class ComGui():
 
         # Chargement automatique de la configuration au démarrage
         self.auto_load_configuration()
+
+        self.logger = setup_logger("ComGui")
 
     # ------------------------------------------------------------------
     # Construction des menus déroulants
@@ -650,7 +655,7 @@ class ComGui():
             try:
                 self.conn.kill_chart()
             except Exception as e:
-                print(f"[ComGui] Impossible de fermer le graphique : {e}")
+                self.logger.error(f"Impossible de fermer le graphique : {e}")
 
             self.data.clear_data()
 
@@ -695,13 +700,13 @@ class ComGui():
             with open(self.config_file, "w") as f:
                 json.dump(config, f, indent=4)
 
-            print(f"[ComGui] Config sauvegardée — Port={current_port}, Baud={current_baud}")
+            self.logger.info(f"Config sauvegardee — Port={current_port}, Baud={current_baud}")
             messagebox.showinfo(
                 "Configuration saved",
                 f"Port: {current_port}\nBaud Rate: {current_baud}"
             )
         except Exception as e:
-            print(f"[ComGui] Erreur sauvegarde config : {e}")
+            self.logger.error(f"Erreur sauvegarde config : {e}")
             messagebox.showerror("Error", f"Cannot save configuration: {e}")
 
     def auto_load_configuration(self):
@@ -713,7 +718,7 @@ class ComGui():
             bool : True si le chargement a réussi, False sinon.
         """
         if not os.path.exists(self.config_file):
-            print("[ComGui] Aucune configuration sauvegardée trouvée.")
+            self.logger.warning("Aucune configuration sauvegardee trouvee.")
             return False
 
         try:
@@ -726,27 +731,27 @@ class ComGui():
             # Application du port sauvegardé s'il est disponible
             if saved_port in self.serial.com_list:
                 self.clicked_com.set(saved_port)
-                print(f"[ComGui] Port '{saved_port}' chargé automatiquement.")
+                self.logger.info(f"Port '{saved_port}' charge automatiquement.")
             else:
-                print(f"[ComGui] Port '{saved_port}' non disponible.")
+                self.logger.warning(f"Port '{saved_port}' non disponible.")
 
             # Application du baudrate sauvegardé s'il est valide
             if saved_baud in self.BAUD_RATES:
                 self.clicked_bd.set(saved_baud)
-                print(f"[ComGui] Baud rate '{saved_baud}' chargé automatiquement.")
+                self.logger.info(f"Baud rate '{saved_baud}' charge automatiquement.")
             else:
-                print(f"[ComGui] Baud rate '{saved_baud}' non valide.")
+                self.logger.warning(f"Baud rate '{saved_baud}' non valide.")
 
             # Activation du bouton Connect si les deux valeurs sont valides
             if (saved_port in self.serial.com_list and saved_baud in self.BAUD_RATES
                     and saved_port != "-" and saved_baud != "-"):
                 self.btn_connect.config(state="active")
-                print("[ComGui] Bouton Connect activé automatiquement.")
+                self.logger.info("Bouton Connect active automatiquement.")
 
             return True
 
         except Exception as e:
-            print(f"[ComGui] Erreur de chargement automatique : {e}")
+            self.logger.error(f"Erreur chargement automatique : {e}")
             return False
 
 
@@ -828,6 +833,8 @@ class ConnGUI():
 
         # Création automatique du premier graphique après 500 ms
         self.root.after(500, self._delayed_new_chart)
+
+        self.logger = setup_logger("ConnGUI")
 
     # ------------------------------------------------------------------
     # Ouverture / fermeture du panneau
@@ -938,7 +945,7 @@ class ConnGUI():
                 self.chart_master.figs[chart_idx][0].canvas.draw()
 
         except Exception as e:
-            print(f"[ConnGUI] Erreur mise à jour graphique : {e}")
+            self.logger.error(f"Erreur mise a jour graphique : {e}")
 
         # Rappel automatique toutes les 40 ms tant que le flux est actif
         if self.serial.threading:
@@ -955,9 +962,9 @@ class ConnGUI():
         """
         try:
             self.new_chart()
-            print("[ConnGUI] Premier graphique créé automatiquement.")
+            self.logger.info("Premier graphique cree automatiquement.")
         except Exception as e:
-            print(f"[ConnGUI] Erreur creation automatique du graphique : {e}")
+            self.logger.error(f"Erreur creation automatique graphique : {e}")
 
     def new_chart(self):
         """Ajoute un nouveau graphique via le gestionnaire DisGUI."""
@@ -995,21 +1002,21 @@ class ConnGUI():
             self.chart_master.adjust_root_frame()
 
         except Exception as e:
-            print(f"[ConnGUI] Impossible de supprimer le graphique : {e}")
+            self.logger.error(f"Impossible de supprimer le graphique : {e}")
 
         try:
             self.chart_master.update_master_frame()
         except Exception as e:
-            print(f"[ConnGUI] Impossible de mettre a jour le frame principal : {e}")
+            self.logger.error(f"Impossible de mettre a jour le frame principal : {e}")
 
     def kill_all_charts(self):
         """Supprime tous les graphiques existants un par un."""
         try:
             while self.chart_master.frames:
                 self.kill_chart()
-            print("[ConnGUI] Tous les graphiques detruits.")
+            self.logger.info("Tous les graphiques detruits.")
         except Exception as e:
-            print(f"[ConnGUI] Erreur suppression des graphiques : {e}")
+            self.logger.error(f"Erreur suppression graphiques : {e}")
 
     # ------------------------------------------------------------------
     # Sauvegarde CSV
@@ -1085,6 +1092,8 @@ class DisGUI():
         self.frames_col   = 0
         self.frames_row   = 4
         self.total_frames = 0
+
+        self.logger = setup_logger("DisGUI")
 
     # ------------------------------------------------------------------
     # Ajout d'un graphique complet
@@ -1416,7 +1425,7 @@ class DisGUI():
             ax.legend()
             self.figs[frame_index][2].draw()
         except Exception as e:
-            print(f"[DisGUI] Impossible de mettre a jour les labels : {e}")
+            self.logger.error(f"Impossible de mettre a jour les labels : {e}")
 
 
 # ==============================================================================
