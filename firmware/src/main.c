@@ -63,10 +63,10 @@ static char          last_cmd      = 'S';
 static char          tx_buffer[TX_BUFFER_SIZE];
 
 /* Valeurs fixes des canaux de donnees */
-static int val1 = 206;    /* Canal 0 : valeur fixe */
-static int val2 = 157;    /* Canal 1 : valeur fixe */
+static int val1 = 0;    /* Canal 0 : valeur fixe */
+static int val2 = 2000;    /* Canal 1 : valeur fixe */
 static int val3 = 1282;   /* Canal 2 : valeur fixe */
-static int val4 = 7677;   /* Canal 3 : valeur fixe */
+static int val4 = 3500;   /* Canal 3 : valeur fixe */
 static int val5 = 0;      /* Longueur totale des chiffres ASCII (integrite) */
 
 /* ------------------------------------------------------------------
@@ -285,6 +285,14 @@ static void handle_uart_command(char cmd)
  */
 static void send_data_frame(void)
 {
+    /* Incrementation de val1 : 0 -> 2000 par pas de 2*/
+    if(val1 < 2000)
+        val1 += 2;
+
+    /* Descrementation de val2 : 2000 -> par pas de 2 */
+    if(val2 > 0)
+        val2 -= 2;
+
     /* Calcul de val5 : integrite de la trame */
     val5 = count_digits((unsigned long)val1)
          + count_digits((unsigned long)val2)
