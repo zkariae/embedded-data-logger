@@ -13,7 +13,7 @@ Responsabilités :
 Auteur  : z_benakka193
 Projet  : embedded-data-logger
 """
-
+import os
 import csv
 import time
 from datetime import datetime
@@ -123,8 +123,13 @@ class DataMaster:
         """
         Génère un nom de fichier CSV horodaté pour la session courante.
         Format : YYYYMMDDHHMMSS.csv
+        Sauvegarde dans gui/logs/
         """
-        self.filename = datetime.now().strftime("%Y%m%d%H%M%S") + ".csv"
+        log_dir = os.path.join(os.path.dirname(__file__), "..", "logs")
+        os.makedirs(log_dir, exist_ok=True)
+        self.filename = os.path.join(
+            log_dir, datetime.now().strftime("%Y%m%d%H%M%S") + ".csv"
+        )
 
     def clear_data(self):
         """Réinitialise tous les buffers de données (appelé à la déconnexion)."""
@@ -259,9 +264,12 @@ class DataMaster:
 
     def save_data(self, gui):
         """
-        Ajoute une ligne au fichier CSV si la sauvegarde est activée.
+        Ajoute une ligne au fichier CSV si la sauvegarde est activee.
 
         Format : [timestamp, val_ch0, val_ch1, ..., val_chN]
+
+        Si le fichier n'existe pas encore, ecrit d'abord une ligne
+        d'en-tetes (timestamp + noms des canaux).
 
         Args:
             gui: Objet exposant gui.save (bool).
@@ -269,12 +277,23 @@ class DataMaster:
         if not gui.save:
             return
 
-        row = list(self.int_msg)
-        row.insert(0, self.XData[-1])
+        file_exists = os.path.exists(self.filename)
 
         with open(self.filename, "a", newline="") as csv_file:
             writer = csv.writer(csv_file)
-            writer.writerow(row)
+
+            # Ecriture des en-tetes si le fichier est nouveau
+            if not file_exists:
+                headers = ["timestamp"] + [
+                    self.ChannelName[ch] for ch in self.Channels
+                ]
+                writer.writerow(headers)
+                self.logger.info(f"Fichier CSV cree : {self.filename}")
+
+            # Ecriture des donnees
+            row = list(self.int_msg)
+            row.insert(0, round(self.XData[-1], 4))
+            writer.writerow(row)    
 
     # ------------------------------------------------------------------
     # Fonctions de tracé
