@@ -71,7 +71,7 @@ class Serial_Control:
             self.ser = serial.Serial(
                 port=port,
                 baudrate=baud,
-                timeout=0.01
+                timeout=1
             )
             self.ser.status = True
             print(f"[Serial] Port {port} ouvert à {baud} baud.")
@@ -143,7 +143,7 @@ class Serial_Control:
                 gui.data.raw_msg = self.ser.readline()
                 gui.data.decode_message()
 
-                if gui.data.SYNC_OK in gui.data.msg[0] and int(gui.data.msg[1]) > 0:
+                if len(gui.data.msg) >= 2 and gui.data.SYNC_OK in gui.data.msg[0] and int(gui.data.msg[1]) > 0:
                     self._on_sync_success(gui)
                     self.threading = False
                     break
