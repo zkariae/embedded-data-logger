@@ -20,6 +20,9 @@ import time
 import serial
 import serial.tools.list_ports
 
+from logger_config import setup_logger
+logger = setup_logger("SerialControl")
+
 
 class Serial_Control:
     """Contrôleur de la communication série avec la carte STM32."""
@@ -64,7 +67,7 @@ class Serial_Control:
 
         try:
             if self.ser is not None and self.ser.is_open:
-                print(f"[Serial] Port {port} déjà ouvert.")
+                logger.info(f"Port {port} deja ouvert.")
                 self.ser.status = True
                 return
 
@@ -74,10 +77,10 @@ class Serial_Control:
                 timeout=0.1
             )
             self.ser.status = True
-            print(f"[Serial] Port {port} ouvert à {baud} baud.")
+            logger.info(f"Port {port} ouvert a {baud} baud.")
 
         except serial.SerialException as e:
-            print(f"[Serial] Échec d'ouverture du port {port} : {e}")
+            logger.error(f"Echec ouverture port {port} : {e}")
             if self.ser:
                 self.ser.status = False
 
@@ -91,10 +94,10 @@ class Serial_Control:
         try:
             if self.ser is not None and self.ser.is_open:
                 self.ser.close()
-                print("[Serial] Port fermé.")
+                logger.info("Port ferme.")
             self.ser.status = False
         except Exception as e:
-            print(f"[Serial] Erreur lors de la fermeture : {e}")
+            logger.error(f"Erreur fermeture : {e}")
             if self.ser:
                 self.ser.status = False
 
@@ -106,15 +109,15 @@ class Serial_Control:
             gui: Objet de l'interface exposant gui.data (DataMaster).
         """
         if self.ser is None or not self.ser.is_open:
-            print("[Serial] Déconnexion ignorée : port déjà fermé.")
+            logger.warning("Deconnexion ignoree : port deja ferme.")
             return
 
         try:
             self.ser.write(gui.data.CMD_DISCONNECT.encode())
             self.ser.close()
-            print("[Serial] Déconnexion propre effectuée.")
+            logger.info("Deconnexion propre effectuee.")
         except Exception as e:
-            print(f"[Serial] Erreur lors de la déconnexion : {e}")
+            logger.error(f"Erreur deconnexion : {e}")
 
     # ------------------------------------------------------------------
     # Synchronisation initiale (handshake)
@@ -131,7 +134,7 @@ class Serial_Control:
         Args:
             gui: Objet de l'interface exposant gui.data et gui.conn.
         """
-        print("[Serial] Thread de synchronisation démarré.")
+        logger.info("Thread synchronisation demarre.")
         self.threading = True
         attempts = 0
 
@@ -149,7 +152,7 @@ class Serial_Control:
                     break
 
             except Exception as e:
-                print(f"[Serial] Erreur synchronisation : {e}")
+                logger.error(f"Erreur synchronisation : {e}")
 
             attempts += 1
 
@@ -161,7 +164,7 @@ class Serial_Control:
             if not self.threading:
                 break
 
-        print("[Serial] Thread de synchronisation terminé.")
+        logger.info("Thread synchronisation termine.")
 
     def _on_sync_success(self, gui):
         """
@@ -189,7 +192,7 @@ class Serial_Control:
         gui.data.build_y_data()
         gui.data.set_filename()
 
-        print(f"[Serial] Sync OK — {nb_channels} canal(aux) détecté(s).")
+        logger.info(f"Sync OK - {nb_channels} canal(aux) detecte(s).")
 
     # ------------------------------------------------------------------
     # Flux de données (streaming)
@@ -230,7 +233,7 @@ class Serial_Control:
                     break
 
             except Exception as e:
-                print(f"[Serial] Erreur démarrage stream (phase 1) : {e}")
+                logger.error(f"Erreur stream phase 1 : {e}")
 
         gui.update_chart()
 
@@ -255,7 +258,7 @@ class Serial_Control:
                         t.start()
 
             except Exception as e:
-                print(f"[Serial] Erreur réception stream (phase 2) : {e}")
+                logger.error(f"Erreur stream phase 2 : {e}")
 
 
 # ------------------------------------------------------------------
@@ -264,4 +267,4 @@ class Serial_Control:
 if __name__ == "__main__":
     ctrl = Serial_Control()
     ctrl.get_com_list()
-    print(f"Ports disponibles : {ctrl.com_list}")
+    logger.info(f"Ports disponibles : {ctrl.com_list}")

@@ -20,6 +20,9 @@ from datetime import datetime
 
 import numpy as np
 
+from logger_config import setup_logger
+logger = setup_logger("DataMaster")
+
 
 class DataMaster:
     """
@@ -146,9 +149,9 @@ class DataMaster:
         """
         try:
             decoded = self.raw_msg.decode("utf-8").strip()
-            print(f"[Data] Trame reçue : {decoded.strip()}")
+            logger.debug(f"Trame recue : {decoded.strip()}")
         except UnicodeDecodeError as e:
-            print(f"[Data] Erreur de décodage UTF-8 : {e}")
+            logger.error(f"Erreur decodage UTF-8 : {e}")
             return
 
         if not decoded or "#" not in decoded:
@@ -157,7 +160,7 @@ class DataMaster:
         self.msg = decoded.split("#")
         del self.msg[0]
 
-        print(f"[Data] Message décodé : {self.msg}")
+        logger.debug(f"Message decode : {self.msg}")
 
         if self.msg and self.msg[0] == "D":
             self.message_len       = 0
@@ -319,5 +322,5 @@ if __name__ == "__main__":
     data.generate_channels()
     data.build_y_data()
     data.set_filename()
-    print(f"Canaux : {data.Channels}")
-    print(f"Fichier CSV : {data.filename}")
+    logger.info(f"Canaux : {data.Channels}")
+    logger.info(f"Fichier CSV : {data.filename}")
