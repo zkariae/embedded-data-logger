@@ -145,7 +145,7 @@ class DataMaster:
         Le dernier champ est la longueur cumulée (contrôle d'intégrité).
         """
         try:
-            decoded = self.raw_msg.decode("utf-8")
+            decoded = self.raw_msg.decode("utf-8").strip()
             print(f"[Data] Trame reçue : {decoded.strip()}")
         except UnicodeDecodeError as e:
             print(f"[Data] Erreur de décodage UTF-8 : {e}")
