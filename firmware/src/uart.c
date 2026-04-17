@@ -80,11 +80,12 @@ void uart_send_int(int32_t value)
 }
 
 /*==============================================================
-  Recevoir un caractère (bloquant)
+  Recevoir un caractere (non bloquant)
+  Retourne 0 si aucun caractère disponible
 ==============================================================*/
 char uart_receive_char(void)
 {
-    while (!(USART2_SR & USART_SR_RXNE))
-        ;
+    if (!(USART2_SR & USART_SR_RXNE))
+        return 0;  /*  Aucun caractere disponible */
     return (char)(USART2_DR & 0xFF);
 }

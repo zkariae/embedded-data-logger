@@ -71,7 +71,7 @@ class Serial_Control:
             self.ser = serial.Serial(
                 port=port,
                 baudrate=baud,
-                timeout=1
+                timeout=0.1
             )
             self.ser.status = True
             print(f"[Serial] Port {port} ouvert à {baud} baud.")
