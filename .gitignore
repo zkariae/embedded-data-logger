@@ -13,3 +13,8 @@ firmware/build/
 
 # --- Firmware : artefacts de build ---
 firmware/build/
+
+# --- Python cache ---
+gui/src/__pycache__/
+gui/**/__pycache__/
+*.pyc
