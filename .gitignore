@@ -18,3 +18,7 @@ firmware/build/
 gui/src/__pycache__/
 gui/**/__pycache__/
 *.pyc
+
+# --- GUI : logs et fichiers CSV generes ---
+gui/logs/
+*.csv
