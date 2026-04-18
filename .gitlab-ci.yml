@@ -1,0 +1,74 @@
+# .gitlab-ci.yml
+# Pipeline CI/CD — embedded-data-logger
+# Auteur  : z_benakka193
+# Projet  : embedded-data-logger
+
+# ============================================================
+# GitLab CI/CD — embedded-data-logger
+# Pipeline : build → test
+# ============================================================
+
+image: ubuntu:22.04
+
+stages:
+  - build
+  - test
+
+variables:
+  DEBIAN_FRONTEND: noninteractive
+
+# ============================================================
+# Stage 1 : BUILD
+# ============================================================
+build:release:
+  stage: build
+  before_script:
+    - apt-get update -q
+    - apt-get install -y gcc-arm-none-eabi make binutils-arm-none-eabi
+  script:
+    - echo "=== Building RELEASE ==="
+    - cd firmware
+    - make clean && make
+    - echo "=== Build SUCCESS ==="
+  artifacts:
+    paths:
+      - firmware/build/bin/embedded-data-logger.elf
+      - firmware/build/bin/embedded-data-logger.hex
+    expire_in: 1 week
+  only:
+    - develop
+    - main
+
+build:debug:
+  stage: build
+  before_script:
+    - apt-get update -q
+    - apt-get install -y gcc-arm-none-eabi make binutils-arm-none-eabi
+  script:
+    - echo "=== Building DEBUG ==="
+    - cd firmware
+    - make clean && make BUILD=debug
+    - echo "=== Build SUCCESS ==="
+  only:
+    - develop
+    - main
+
+# ============================================================
+# Stage 2 : TEST
+# ============================================================
+test-gui:
+  stage: test
+  image: python:3.10
+  before_script:
+    - pip install -r gui/requirements.txt
+    - pip install pytest
+  script:
+    - echo "=== Checking Python syntax ==="
+    - python3 -m py_compile gui/src/Master.py
+    - python3 -m py_compile gui/src/GUI_Master.py
+    - python3 -m py_compile gui/src/Serial_Com_Control.py
+    - python3 -m py_compile gui/src/Data_communication_Control.py
+    - echo "=== Syntax check SUCCESS ==="
+  only:
+    - develop
+    - main
