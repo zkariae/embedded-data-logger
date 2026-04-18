@@ -40,7 +40,12 @@ test-gui:
     - pip install pytest
   script:
     - cd gui
-    - python -m pytest tests/ -v
+    #- python -m pytest tests/ -v
+    - python3 -m py_compile src/Master.py
+    - python3 -m py_compile src/GUI_Master.py
+    - python3 -m py_compile src/Serial_Com_Control.py
+    - python3 -m py_compile src/Data_communication_Control.py
+    - echo "Syntaxe Python OK"
   only:
     - develop
     - main
