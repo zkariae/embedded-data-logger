@@ -490,7 +490,7 @@ class ComGui():
         self.btn_save_config = Button(
             self.frame, text="Save Configuration", width=20, state="disabled",
             command=self.save_configuration)
-            
+
         self.logger = setup_logger("ComGui")  
         # Placement des widgets dans la grille
         self._publish()
@@ -628,7 +628,7 @@ class ComGui():
                 )
 
                 # Création du panneau de contrôle ConnGUI
-                self.conn = ConnGUI(self.root, self.serial, self.data)
+                self.conn = ConnGUI(self.root, self.serial, self.data, self)
 
                 # Lancement du thread de synchronisation avec la carte STM32
                 self.serial.t1 = threading.Thread(
@@ -773,7 +773,7 @@ class ConnGUI():
         - Fermer proprement tous les widgets à la déconnexion
     """
 
-    def __init__(self, root, serial, data):
+    def __init__(self, root, serial, data, com_gui):
         """
         Initialise le panneau Connection Manager et crée le premier graphique
         automatiquement après 500 ms (délai pour attendre la fin de la sync).
@@ -787,6 +787,7 @@ class ConnGUI():
         self.serial = serial
         self.data   = data
         self.save   = False
+        self.com_gui = com_gui   # Reference vers ComGui
         self.padx   = 20
         self.pady   = 15
 

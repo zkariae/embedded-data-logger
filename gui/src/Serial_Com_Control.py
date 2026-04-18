@@ -329,7 +329,7 @@ class Serial_Control:
                 logger.error(f"Connexion serie perdue : {e}")
                 self.threading = False
                 # Lancer la reconnexion automatique dans le thread principal
-                gui.root.after(0, lambda: self.auto_reconnect(gui))
+                gui.root.after(0, lambda: self.auto_reconnect(gui.com_gui))
                 break                
             except Exception as e:
                 logger.error(f"Erreur stream phase 2 : {e}")
