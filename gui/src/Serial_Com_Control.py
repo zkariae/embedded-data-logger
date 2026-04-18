@@ -20,6 +20,10 @@ import time
 import serial
 import serial.tools.list_ports
 
+import numpy as np
+
+from GUI_Master import ConnGUI
+
 from logger_config import setup_logger
 logger = setup_logger("SerialControl")
 
@@ -119,6 +123,77 @@ class Serial_Control:
         except Exception as e:
             logger.error(f"Erreur deconnexion : {e}")
 
+    def auto_reconnect(self, gui):
+        """
+        Tente une reconnexion automatique apres une deconnexion serie.
+
+        Args:
+            gui: Objet ConnGUI exposant gui.root et gui.data.
+        """
+        MAX_RECONNECT_ATTEMPTS = 5
+        RECONNECT_DELAY        = 2  # secondes
+
+        # Reinitialiser completement les donnees avant reconnexion
+        gui.data.clear_data()
+        gui.data.XDisplay = np.array([])
+        gui.data.YDisplay = np.array([])
+        gui.data.int_msg  = []
+
+        from tkinter import messagebox
+
+        response = messagebox.askyesno(
+            "Connexion perdue",
+            "La connexion serie a ete perdue.\nVoulez-vous reconnecter ?"
+        )
+
+        if not response:
+            logger.info("Reconnexion annulee par l'utilisateur.")
+            return
+
+        for attempt in range(1, MAX_RECONNECT_ATTEMPTS + 1):
+            logger.info(f"Tentative de reconnexion {attempt}/{MAX_RECONNECT_ATTEMPTS}...")
+
+            try:
+                # Reouverture directe avec les parametres existants
+                if not self.ser.is_open:
+                    self.ser.open()
+
+                if self.ser.is_open:
+                    self.ser.status = True
+                    logger.info("Reconnexion reussie.")
+                    messagebox.showinfo(
+                        "Reconnexion",
+                        "Connexion retablie avec succes !"
+                    )
+                    # Reinitialiser les donnees
+                    gui.data.clear_data()
+                    gui.data.XDisplay = np.array([])
+                    gui.data.YDisplay = np.array([])
+                    gui.data.int_msg  = []
+
+                    # Recreer ConnGUI
+                    gui.conn = ConnGUI(gui.root, gui.serial, gui.data, gui)
+
+                    # Relancer la synchronisation
+                    self.t1 = threading.Thread(
+                        target=self.serial_sync,
+                        args=(gui,),
+                        daemon=True
+                    )
+                    self.t1.start()
+                    return
+
+            except Exception as e:
+                logger.error(f"Echec tentative {attempt} : {e}")
+
+            time.sleep(RECONNECT_DELAY)
+
+        logger.error(f"Reconnexion echouee apres {MAX_RECONNECT_ATTEMPTS} tentatives.")
+        messagebox.showerror(
+            "Echec reconnexion",
+            f"Impossible de reconnecter apres {MAX_RECONNECT_ATTEMPTS} tentatives.\n"
+            "Verifiez la connexion USB et relancez l'application."
+        )
     # ------------------------------------------------------------------
     # Synchronisation initiale (handshake)
     # ------------------------------------------------------------------
@@ -238,9 +313,22 @@ class Serial_Control:
         gui.update_chart()
 
         # --- Phase 2 : flux continu ---
+        empty_count = 0
+        MAX_EMPTY   = 10  # 10 lectures vides consecutives = deconnexion
         while self.threading:
             try:
                 gui.data.raw_msg = self.ser.readline()
+
+                # Detection deconnexion : trop de trames vides consecutives
+                if gui.data.raw_msg == b"":
+                    empty_count += 1
+                    if empty_count >= MAX_EMPTY:
+                        raise serial.SerialException("Port serie deconnecte.")
+                    continue
+
+                # Trame recue — reinitialiser le compteur
+                empty_count = 0
+
                 gui.data.decode_message()
                 gui.data.check_stream_data()
 
@@ -256,7 +344,12 @@ class Serial_Control:
                             daemon=True
                         )
                         t.start()
-
+            except serial.SerialException as e:
+                logger.error(f"Connexion serie perdue : {e}")
+                self.threading = False
+                # Lancer la reconnexion automatique dans le thread principal
+                gui.root.after(0, lambda: self.auto_reconnect(gui.com_gui))
+                break                
             except Exception as e:
                 logger.error(f"Erreur stream phase 2 : {e}")
 
