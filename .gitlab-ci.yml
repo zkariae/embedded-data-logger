@@ -1,0 +1,46 @@
+# .gitlab-ci.yml
+# Pipeline CI/CD — embedded-data-logger
+# Auteur  : z_benakka193
+# Projet  : embedded-data-logger
+
+stages:
+  - build
+  - test
+
+# ------------------------------------------------------------------
+# Build Firmware STM32
+# ------------------------------------------------------------------
+build-firmware:
+  stage: build
+  image: gcc-arm
+  before_script:
+    - apt-get update -qq
+    - apt-get install -y -qq gcc-arm-none-eabi binutils-arm-none-eabi make
+  script:
+    - cd firmware
+    - make clean
+    - make
+  artifacts:
+    paths:
+      - firmware/build/bin/embedded-data-logger.hex
+      - firmware/build/bin/embedded-data-logger.elf
+    expire_in: 1 week
+  only:
+    - develop
+    - main
+
+# ------------------------------------------------------------------
+# Test Python GUI
+# ------------------------------------------------------------------
+test-gui:
+  stage: test
+  image: python:3.10
+  before_script:
+    - pip install -r gui/requirements.txt
+    - pip install pytest
+  script:
+    - cd gui
+    - python -m pytest tests/ -v
+  only:
+    - develop
+    - main
