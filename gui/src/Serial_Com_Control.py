@@ -20,6 +20,10 @@ import time
 import serial
 import serial.tools.list_ports
 
+import numpy as np
+
+from GUI_Master import ConnGUI
+
 from logger_config import setup_logger
 logger = setup_logger("SerialControl")
 
@@ -129,6 +133,12 @@ class Serial_Control:
         MAX_RECONNECT_ATTEMPTS = 5
         RECONNECT_DELAY        = 2  # secondes
 
+        # Reinitialiser completement les donnees avant reconnexion
+        gui.data.clear_data()
+        gui.data.XDisplay = np.array([])
+        gui.data.YDisplay = np.array([])
+        gui.data.int_msg  = []
+
         from tkinter import messagebox
 
         response = messagebox.askyesno(
@@ -155,6 +165,15 @@ class Serial_Control:
                         "Reconnexion",
                         "Connexion retablie avec succes !"
                     )
+                    # Reinitialiser les donnees
+                    gui.data.clear_data()
+                    gui.data.XDisplay = np.array([])
+                    gui.data.YDisplay = np.array([])
+                    gui.data.int_msg  = []
+
+                    # Recreer ConnGUI
+                    gui.conn = ConnGUI(gui.root, gui.serial, gui.data, gui)
+
                     # Relancer la synchronisation
                     self.t1 = threading.Thread(
                         target=self.serial_sync,
