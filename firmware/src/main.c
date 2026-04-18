@@ -32,6 +32,7 @@
 #include "systick.h"
 #include "uart.h"
 #include "log.h"
+#include "iwdg.h"
 
 /* ------------------------------------------------------------------
  * Constantes
@@ -323,6 +324,8 @@ int main(void)
     gpio_init();
     systick_init();
     uart_init(UART_BAUD_115200);
+    /* Initialisation du watchdog — timeout 2 secondes */
+    iwdg_init(2000);
 
     LOG_INFO("=== embedded-data-logger ===");
     LOG_INFO("En attente de synchronisation...");
@@ -332,6 +335,7 @@ int main(void)
 
     while (1)
     {
+
         /* --- Reception UART --- */
         rx_char = uart_receive_char();
 
@@ -357,5 +361,7 @@ int main(void)
             default:
                 break;
         }
+        /* Rafraichir le watchdog — empeche le reset */
+        iwdg_refresh();
     }
 }
