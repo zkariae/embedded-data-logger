@@ -490,14 +490,15 @@ class ComGui():
         self.btn_save_config = Button(
             self.frame, text="Save Configuration", width=20, state="disabled",
             command=self.save_configuration)
-
+            
+        self.logger = setup_logger("ComGui")  
         # Placement des widgets dans la grille
         self._publish()
 
         # Chargement automatique de la configuration au démarrage
         self.auto_load_configuration()
 
-        self.logger = setup_logger("ComGui")
+        
 
     # ------------------------------------------------------------------
     # Construction des menus déroulants
