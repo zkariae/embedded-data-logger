@@ -33,13 +33,28 @@ from logger_config import setup_logger
 
 
 
-# Ajouter en haut du fichier après les imports
 BG_COLOR     = "#1e1e1e"   # Fond principal noir
 FRAME_COLOR  = "#2d2d2d"   # Fond des frames
 TEXT_COLOR   = "#ffffff"   # Texte blanc
 ACCENT_COLOR = "#00ff99"   # Couleur accent vert
 BTN_COLOR    = "#3d3d3d"   # Fond boutons
 BTN_TEXT     = "#ffffff"   # Texte boutons
+
+# ==============================================================================
+# Dimensions de l'interface — 1920x1080, 2 colonnes, 4 graphiques max
+# ==============================================================================
+
+WINDOW_W_SINGLE = 1400   # Largeur fenetre avec 1 graphique
+WINDOW_W_MULTI  = 1900   # Largeur fenetre avec 2+ graphiques
+WINDOW_H_SINGLE = 640   # Hauteur fenetre avec 1 graphique
+WINDOW_H_BASE   = 150    # Hauteur header (Com + Connection Manager)
+WINDOW_H_CHART  = 480    # Hauteur par ligne de graphiques
+
+FIG_W_SINGLE = 8    # Largeur graphique unique (pouces)
+FIG_H_SINGLE = 5    # Hauteur graphique unique (pouces)
+FIG_W_MULTI  = 7    # Largeur graphiques multiples (pouces)
+FIG_H_MULTI  = 4    # Hauteur graphiques multiples (pouces)
+FIG_DPI      = 90   # Resolution
 
 # ==============================================================================
 # RootGUI — Fenêtre principale et authentification
@@ -375,7 +390,7 @@ class RootGUI():
         for widget in self.root.winfo_children():
             widget.destroy()
         self.root.title("Serial Communication")
-        self.root.geometry("600x120")
+        self.root.geometry("1000x120")
         ComGui(self.root, self.serial, self.data)
 
     def open_ssh(self):
@@ -853,7 +868,7 @@ class ConnGUI():
 
     def conn_gui_open(self):
         """Place tous les widgets du panneau Connection Manager dans la grille."""
-        self.root.geometry("1100x120")
+        self.root.geometry(f"{WINDOW_W_SINGLE}x{WINDOW_H_SINGLE}")
         self.frame.grid(row=0, column=4, rowspan=3, columnspan=5, padx=5, pady=5)
 
         self.sync_label.grid(column=1,  row=1)
@@ -879,7 +894,7 @@ class ConnGUI():
             widget.destroy()
         self.frame.destroy()
         self.kill_all_charts()
-        self.root.geometry("600x120")
+        self.root.geometry("1000x120")
 
     # ------------------------------------------------------------------
     # Contrôle du flux de données
@@ -1190,8 +1205,8 @@ class DisGUI():
                         4 graphiques (2 lignes) -> 120 + 430 * 2 = 980 px
         """
         self.total_frames = len(self.frames) - 1
-        root_w = 2200 if self.total_frames > 0 else 1100
-        root_h = 120 + 430 * (int(self.total_frames / 2) + 1)
+        root_w = WINDOW_W_MULTI if self.total_frames > 0 else WINDOW_W_SINGLE
+        root_h = WINDOW_H_BASE + WINDOW_H_CHART * (int(self.total_frames / 2) + 1)
         self.root.geometry(f"{root_w}x{root_h}")
 
     # ------------------------------------------------------------------
@@ -1210,8 +1225,12 @@ class DisGUI():
         Lors de l'ajout du 2e graphique, le 1er est redimensionne en 6x4
         pour uniformiser l'affichage.
         """
-        figsize = (8, 4) if self.total_frames == 0 else (6, 4)
-        dpi     = 80     if self.total_frames == 0 else 60
+        if self.total_frames == 0:
+            figsize = (FIG_W_SINGLE, FIG_H_SINGLE)
+            dpi     = FIG_DPI
+        else:
+            figsize = (FIG_W_MULTI, FIG_H_MULTI)
+            dpi     = FIG_DPI
 
         fig = plt.Figure(figsize=figsize, dpi=dpi, facecolor=BG_COLOR)
         axes   = fig.add_subplot(111)
@@ -1231,8 +1250,8 @@ class DisGUI():
         # Redimensionne le premier graphique lors de l'ajout du second
         if self.total_frames == 1:
             self.figs[0][2].get_tk_widget().destroy()
-            fig0 = plt.Figure(figsize=(6, 4), dpi=60, facecolor=BG_COLOR)
-            axes0 = fig0.add_subplot(111)
+            fig0    = plt.Figure(figsize=(FIG_W_MULTI, FIG_H_MULTI), dpi=FIG_DPI, facecolor=BG_COLOR)
+            axes0   = fig0.add_subplot(111)
             axes0.set_facecolor(FRAME_COLOR)
             axes0.tick_params(colors=TEXT_COLOR)
             axes0.xaxis.label.set_color(TEXT_COLOR)
@@ -1428,7 +1447,7 @@ class DisGUI():
 
         # Recreation de la figure en taille maximale (8x4)
         self.figs[0][2].get_tk_widget().destroy()
-        fig = plt.Figure(figsize=(8, 4), dpi=80, facecolor=BG_COLOR)
+        fig = plt.Figure(figsize=(FIG_W_SINGLE, FIG_H_SINGLE), dpi=FIG_DPI, facecolor=BG_COLOR)
         axes = fig.add_subplot(111)
         axes.set_facecolor(FRAME_COLOR)
         axes.tick_params(colors=TEXT_COLOR)
