@@ -105,3 +105,77 @@ embedded-data-logger/
 ├── .gitlab-ci.yml                     # Pipeline CI/CD
 └── README.md
 ```
+
+
+---
+
+## Prérequis
+
+### Matériel
+| Composant | Description |
+|-----------|-------------|
+| STM32F407VG-Discovery | Carte de développement |
+| Câble USB | Connexion ST-Link + UART |
+| PC Linux / WSL | Ubuntu 22.04 recommandé |
+
+### Logiciels
+| Outil | Installation |
+|-------|-------------|
+| arm-none-eabi-gcc | `sudo apt install gcc-arm-none-eabi` |
+| OpenOCD | `sudo apt install openocd` |
+| make | `sudo apt install make` |
+| Python 3.10+ | `sudo apt install python3` |
+| Docker | `sudo apt install docker.io docker-compose` |
+
+---
+
+## Installation
+
+### 1. Cloner le dépôt
+
+```bash
+git clone https://gitlab.com/z_benakka193/embedded-data-logger.git
+cd embedded-data-logger
+```
+
+### 2. Firmware STM32
+
+```bash
+cd firmware
+
+# Compiler
+make
+
+# Flasher la carte
+make flash
+```
+
+### 3. Interface graphique Python
+
+```bash
+cd gui
+
+# Installer les dependances
+pip3 install -r requirements.txt
+
+# Copier les fichiers de configuration
+cp config/com_config.json.example config/com_config.json
+cp config/users.json.example      config/users.json
+```
+
+### 4. Stack Cloud (InfluxDB + Grafana)
+
+```bash
+cd docker
+
+# Lancer les conteneurs
+sudo docker-compose up -d
+
+# Vérifier
+sudo docker ps
+```
+
+| Service | URL | Login |
+|---------|-----|-------|
+| InfluxDB | http://localhost:8086 | admin / admin1234 |
+| Grafana  | http://localhost:3000 | admin / admin1234 |
