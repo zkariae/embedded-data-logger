@@ -1,0 +1,52 @@
+# docker-compose.yml
+# Stack : InfluxDB + Grafana
+# Auteur  : z_benakka193
+# Projet  : embedded-data-logger
+
+version: '3.8'
+
+services:
+
+  # ------------------------------------------------------------------
+  # InfluxDB — Base de données time-series
+  # ------------------------------------------------------------------
+  influxdb:
+    image: influxdb:2.7
+    container_name: embedded-influxdb
+    restart: always
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=admin1234
+      - DOCKER_INFLUXDB_INIT_ORG=embedded-data-logger
+      - DOCKER_INFLUXDB_INIT_BUCKET=sensors
+      - DOCKER_INFLUXDB_INIT_RETENTION=30d
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=my-super-secret-token
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+
+  # ------------------------------------------------------------------
+  # Grafana — Dashboard de visualisation
+  # ------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:10.0.0
+    container_name: embedded-grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin1234
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - influxdb
+
+# ------------------------------------------------------------------
+# Volumes persistants
+# ------------------------------------------------------------------
+volumes:
+  influxdb-data:
+  grafana-data:
