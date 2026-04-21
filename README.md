@@ -56,3 +56,52 @@ de données en temps réel via UART DMA.
                                                       │  localhost:3000      │
                                                       └──────────────────────┘
 ```
+
+
+---
+
+## Structure du dépôt
+
+```
+embedded-data-logger/
+│
+├── firmware/                          # Firmware STM32 (C, Makefile)
+│   ├── src/
+│   │   ├── main.c                     # Machine a etats UART + LEDs
+│   │   ├── uart.c                     # Driver UART USART2
+│   │   ├── gpio.c                     # Driver GPIO LEDs
+│   │   ├── systick.c                  # Timer SysTick + delay_ms()
+│   │   ├── iwdg.c                     # Driver Watchdog IWDG
+│   │   └── system_stm32f4xx.c         # SystemInit (FPU + VTOR)
+│   ├── include/                       # Fichiers d'en-tete (.h)
+│   ├── startup/
+│   │   └── startup_stm32f407.s        # Table des vecteurs + Reset_Handler
+│   ├── linker/
+│   │   └── STM32F407VGTx.ld           # Script de linkage (FLASH 1024K / RAM 192K)
+│   ├── Makefile                       # Build GCC + OpenOCD + GDB
+│   └── openocd.cfg                    # Configuration ST-Link SWD
+│
+├── gui/                               # Interface graphique Python
+│   ├── src/
+│   │   ├── Master.py                  # Point d'entree
+│   │   ├── GUI_Master.py              # Interface Tkinter (dark theme)
+│   │   ├── Serial_Com_Control.py      # Communication serie UART
+│   │   ├── Data_communication_Control.py  # Traitement donnees
+│   │   ├── influx_client.py           # Client InfluxDB
+│   │   └── logger_config.py           # Configuration logging
+│   ├── config/
+│   │   ├── com_config.json.example    # Configuration port serie
+│   │   └── users.json.example         # Template utilisateurs
+│   ├── logs/                          # Fichiers CSV + logs (ignores par Git)
+│   ├── tests/                         # Tests unitaires
+│   └── requirements.txt              # Dependances Python
+│
+├── docker/
+│   └── docker-compose.yml             # Stack InfluxDB + Grafana
+│
+├── docs/
+│   └── protocol.md                    # Documentation protocole UART
+│
+├── .gitlab-ci.yml                     # Pipeline CI/CD
+└── README.md
+```
