@@ -12,35 +12,9 @@ Contient quatre classes :
 Auteur  : z_benakka193
 Projet  : embedded-data-logger
 """
+
 from tkinter import *
-from tkinter import messagebox
 from tkinter import ttk
-import tkinter as tk
-import threading
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from functools import partial
-import json
-import os
-from datetime import datetime
-from logger_config import setup_logger
-
-
-"""
-GUI_Master.py
--------------
-Interface graphique principale de l'application embedded-data-logger.
-
-Classes :
-    - RootGUI : fenêtre principale, authentification, sélection du mode de communication
-    - ComGui  : (à venir)
-    - ConnGUI : (à venir)
-    - DisGUI  : (à venir)
-
-Auteur  : z_benakka193
-Projet  : embedded-data-logger
-"""
-
 import json
 import os
 import threading
@@ -54,7 +28,18 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from functools import partial
 from datetime import datetime
+from logger_config import setup_logger
 
+
+
+
+# Ajouter en haut du fichier après les imports
+BG_COLOR     = "#1e1e1e"   # Fond principal noir
+FRAME_COLOR  = "#2d2d2d"   # Fond des frames
+TEXT_COLOR   = "#ffffff"   # Texte blanc
+ACCENT_COLOR = "#00ff99"   # Couleur accent vert
+BTN_COLOR    = "#3d3d3d"   # Fond boutons
+BTN_TEXT     = "#ffffff"   # Texte boutons
 
 # ==============================================================================
 # RootGUI — Fenêtre principale et authentification
@@ -83,7 +68,7 @@ class RootGUI():
         # Création de la fenêtre principale Tkinter
         self.root = tk.Tk()
         self.root.title("Data Management")
-        self.root.config(bg="white")
+        self.root.config(bg=BG_COLOR)
 
         # Références aux objets de communication et de données
         self.serial = serial
@@ -117,49 +102,51 @@ class RootGUI():
             - Lien 'Forgot password?'
             - Label pour les messages d'erreur / confirmation
         """
-        login_frame = LabelFrame(
-            self.root, text="Log in",
-            padx=15, pady=15, bg="white"
-        )
+        # LabelFrame
+        login_frame = LabelFrame(self.root, text="Log in",
+            padx=15, pady=15, bg=FRAME_COLOR, fg=TEXT_COLOR)
         login_frame.pack(padx=20, pady=20, fill="x")
 
         # --- Champ username ---
-        Label(login_frame, text="User name :", bg="white").grid(
+        Label(login_frame, text="User name :", bg=FRAME_COLOR, fg=TEXT_COLOR).grid(
             row=0, column=0, sticky="e", pady=5, padx=5)
-        self.username_entry = Entry(login_frame, width=30)
+        self.username_entry = Entry(login_frame, width=30,
+            bg=BTN_COLOR, fg=TEXT_COLOR, insertbackground=TEXT_COLOR)
         self.username_entry.grid(row=0, column=1, pady=5, padx=5, sticky="ew")
 
         # --- Champ password ---
-        Label(login_frame, text="Password :", bg="white").grid(
+        Label(login_frame, text="Password :",  bg=FRAME_COLOR, fg=TEXT_COLOR).grid(
             row=1, column=0, sticky="e", pady=5, padx=5)
-        self.password_entry = Entry(login_frame, width=30, show="*")
+        self.password_entry = Entry(login_frame, width=30, show="*",
+            bg=BTN_COLOR, fg=TEXT_COLOR, insertbackground=TEXT_COLOR)
         self.password_entry.grid(row=1, column=1, pady=5, padx=5, sticky="ew")
 
         # Case à cocher pour afficher / masquer le mot de passe
         self.show_password_var = tk.BooleanVar()
-        tk.Checkbutton(
-            login_frame, text="Display",
+        tk.Checkbutton(login_frame, text="Display",
             variable=self.show_password_var,
-            bg="white",
-            command=self._toggle_password
-        ).grid(row=1, column=1, sticky="e", padx=(5, 0))
+            bg=FRAME_COLOR, fg=TEXT_COLOR,
+            selectcolor=BTN_COLOR,
+            activebackground=FRAME_COLOR,
+            activeforeground=TEXT_COLOR,
+            command=self._toggle_password).grid(row=1, column=1, sticky="e", padx=(5, 0))
 
         # --- Bouton Connexion ---
-        Button(
-            login_frame, text="Connexion",
-            width=20, command=self.check_login
-        ).grid(row=2, column=0, columnspan=2, pady=10)
+        Button(login_frame, text="Connexion", width=20,
+            bg=BTN_COLOR, fg=BTN_TEXT,
+            activebackground=ACCENT_COLOR,
+            activeforeground=BG_COLOR,
+            command=self.check_login).grid(row=2, column=0, columnspan=2, pady=10)
 
         # --- Label messages d'erreur / confirmation ---
-        self.message_label = Label(login_frame, text="", fg="red", bg="white")
+        self.message_label = Label(login_frame, text="",
+            fg="red", bg=FRAME_COLOR)
         self.message_label.grid(row=3, column=0, columnspan=2, pady=5)
 
         # --- Lien 'Forgot password?' ---
-        forgot_link = Label(
-            login_frame, text="Forgot password?",
-            fg="blue", cursor="hand2", bg="white",
-            font=("Arial", 9, "underline")
-        )
+        forgot_link = Label(login_frame, text="Forgot password?",
+            fg=ACCENT_COLOR, cursor="hand2", bg=FRAME_COLOR,
+            font=("Arial", 9, "underline"))
         forgot_link.grid(row=4, column=0, columnspan=2, pady=(0, 5))
         forgot_link.bind("<Button-1>", self.forgot_password)
 
@@ -173,24 +160,26 @@ class RootGUI():
             - Bouton Serial (désactivé jusqu'au login réussi)
             - Bouton SSH    (désactivé jusqu'au login réussi)
         """
-        comm_frame = LabelFrame(
-            self.root, text="Specify communication method",
-            padx=15, pady=15, bg="white"
-        )
+        comm_frame = LabelFrame(self.root,
+            text="Specify communication method",
+            padx=15, pady=15,
+            bg=FRAME_COLOR, fg=TEXT_COLOR)
         comm_frame.pack(padx=20, pady=10, fill="x")
 
-        self.btn_serial = Button(
-            comm_frame, text="Serial",
+        self.btn_serial = Button(comm_frame, text="Serial",
             state="disabled", width=15,
-            command=self.open_serial
-        )
+            bg=BTN_COLOR, fg=BTN_TEXT,
+            activebackground=ACCENT_COLOR,
+            activeforeground=BG_COLOR,
+            command=self.open_serial)
         self.btn_serial.grid(row=0, column=0, padx=10, pady=5)
 
-        self.btn_ssh = Button(
-            comm_frame, text="SSH",
+        self.btn_ssh = Button(comm_frame, text="SSH",
             state="disabled", width=15,
-            command=self.open_ssh
-        )
+            bg=BTN_COLOR, fg=BTN_TEXT,
+            activebackground=ACCENT_COLOR,
+            activeforeground=BG_COLOR,
+            command=self.open_ssh)
         self.btn_ssh.grid(row=0, column=1, padx=10, pady=5)
 
         comm_frame.columnconfigure(0, weight=1)
@@ -467,28 +456,37 @@ class ComGui():
             os.path.dirname(__file__), "..", "config", "com_config.json"
         )
 
-        # Cadre principal du panneau
-        self.frame = LabelFrame(root, text="Com Manager", padx=5, pady=5, bg="white")
+        # Cadre principal du panneau  
+        self.frame = LabelFrame(root, text="Com Manager",
+            padx=5, pady=5,
+            bg=FRAME_COLOR, fg=TEXT_COLOR)
 
         # Labels des menus déroulants
-        self.label_com = Label(self.frame, text="Available Port(s): ", bg="white", width=15, anchor="w")
-        self.label_bd  = Label(self.frame, text="Baud Rate: ",         bg="white", width=15, anchor="w")
+        self.label_com = Label(self.frame, text="Available Port(s): ",
+            bg=FRAME_COLOR, fg=TEXT_COLOR, width=15, anchor="w")
+        self.label_bd  = Label(self.frame, text="Baud Rate: ",
+            bg=FRAME_COLOR, fg=TEXT_COLOR, width=15, anchor="w")
 
         # Construction des menus déroulants
         self._build_baud_menu()
         self._build_com_menu()
 
         # Boutons de contrôle
-        self.btn_refresh = Button(
-            self.frame, text="Refresh", width=10,
+        self.btn_refresh = Button(self.frame, text="Refresh", width=10,
+            bg=BTN_COLOR, fg=BTN_TEXT,
+            activebackground=ACCENT_COLOR, activeforeground=BG_COLOR,
             command=self.refresh_btn)
 
-        self.btn_connect = Button(
-            self.frame, text="Connect", width=10, state="disabled",
+        self.btn_connect = Button(self.frame, text="Connect", width=10,
+            state="disabled",
+            bg=BTN_COLOR, fg=BTN_TEXT,
+            activebackground=ACCENT_COLOR, activeforeground=BG_COLOR,
             command=self.serial_connect)
 
-        self.btn_save_config = Button(
-            self.frame, text="Save Configuration", width=20, state="disabled",
+        self.btn_save_config = Button(self.frame, text="Save Configuration",
+            width=20, state="disabled",
+            bg=BTN_COLOR, fg=BTN_TEXT,
+            activebackground=ACCENT_COLOR, activeforeground=BG_COLOR,
             command=self.save_configuration)
 
         self.logger = setup_logger("ComGui")  
@@ -512,13 +510,13 @@ class ComGui():
         self.serial.get_com_list()
         self.clicked_com = StringVar()
         self.clicked_com.set(self.serial.com_list[0])
-        self.drop_com = OptionMenu(
-            self.frame, self.clicked_com,
-            *self.serial.com_list,
-            command=self.connect_ctrl
-        )
-        self.drop_com.config(width=10)
-
+        self.drop_com = OptionMenu(self.frame, self.clicked_com,
+            *self.serial.com_list, command=self.connect_ctrl)
+        self.drop_com.config(width=10,
+            bg=BTN_COLOR, fg=BTN_TEXT,
+            activebackground=ACCENT_COLOR, activeforeground=BG_COLOR)
+        self.drop_com["menu"].config(bg=BTN_COLOR, fg=BTN_TEXT)
+    
     def _build_baud_menu(self):
         """
         Construit le menu déroulant des baudrates disponibles.
@@ -526,12 +524,12 @@ class ComGui():
         """
         self.clicked_bd = StringVar()
         self.clicked_bd.set(self.BAUD_RATES[0])
-        self.drop_baud = OptionMenu(
-            self.frame, self.clicked_bd,
-            *self.BAUD_RATES,
-            command=self.connect_ctrl
-        )
-        self.drop_baud.config(width=10)
+        self.drop_baud = OptionMenu(self.frame, self.clicked_bd,
+            *self.BAUD_RATES, command=self.connect_ctrl)
+        self.drop_baud.config(width=10,
+            bg=BTN_COLOR, fg=BTN_TEXT,
+            activebackground=ACCENT_COLOR, activeforeground=BG_COLOR)
+        self.drop_baud["menu"].config(bg=BTN_COLOR, fg=BTN_TEXT)    
 
     def _publish(self):
         """Place tous les widgets du panneau dans la grille Tkinter."""
@@ -792,42 +790,53 @@ class ConnGUI():
         self.pady   = 15
 
         # Cadre principal du panneau
-        self.frame = LabelFrame(
-            root, text="Connection Manager",
-            padx=5, pady=5, bg="white", width=60
-        )
+        self.frame = LabelFrame(root, text="Connection Manager",
+            padx=5, pady=5,
+            bg=FRAME_COLOR, fg=TEXT_COLOR, width=60)
 
         # --- Labels de statut ---
-        self.sync_label  = Label(self.frame, text="Sync Status: ",    bg="white", width=15, anchor="w")
-        self.sync_status = Label(self.frame, text="..Sync..",         bg="white", fg="orange", width=5)
-        self.ch_label    = Label(self.frame, text="Active channels: ", bg="white", width=15, anchor="w")
-        self.ch_status   = Label(self.frame, text="...",               bg="white", fg="orange", width=5)
+        self.sync_label  = Label(self.frame, text="Sync Status: ",
+            bg=FRAME_COLOR, fg=TEXT_COLOR, width=15, anchor="w")
+        self.sync_status = Label(self.frame, text="..Sync..",
+            bg=FRAME_COLOR, fg="orange", width=5)
+        self.ch_label    = Label(self.frame, text="Active channels: ",
+            bg=FRAME_COLOR, fg=TEXT_COLOR, width=15, anchor="w")
+        self.ch_status   = Label(self.frame, text="...",
+            bg=FRAME_COLOR, fg="orange", width=5)
 
         # --- Boutons Start / Stop du flux ---
-        self.btn_start_stream = Button(
-            self.frame, text="Start", state="disabled", width=5,
+        self.btn_start_stream = Button(self.frame, text="Start",
+            state="disabled", width=5, bg=BTN_COLOR, fg=BTN_TEXT,
+            activebackground=ACCENT_COLOR, activeforeground=BG_COLOR,
             command=self.start_stream)
-        self.btn_stop_stream = Button(
-            self.frame, text="Stop", state="disabled", width=5,
+
+        self.btn_stop_stream = Button(self.frame, text="Stop",
+            state="disabled", width=5, bg=BTN_COLOR, fg=BTN_TEXT,
+            activebackground=ACCENT_COLOR, activeforeground=BG_COLOR,
             command=self.stop_stream)
 
         # --- Boutons gestion des graphiques ---
-        self.btn_add_chart = Button(
-            self.frame, text="Add Chart", state="disabled", width=10,
-            bg="white", command=self.new_chart)
-        self.btn_kill_chart = Button(
-            self.frame, text="Delete Chart", state="disabled", width=10,
-            bg="white", command=self.kill_chart)
+        self.btn_add_chart = Button(self.frame, text="Add Chart",
+            state="disabled", width=10, bg=BTN_COLOR, fg=BTN_TEXT,
+            activebackground=ACCENT_COLOR, activeforeground=BG_COLOR,
+            command=self.new_chart)
+
+        self.btn_kill_chart = Button(self.frame, text="Delete Chart",
+            state="disabled", width=10, bg=BTN_COLOR, fg=BTN_TEXT,
+            activebackground=ACCENT_COLOR, activeforeground=BG_COLOR,
+            command=self.kill_chart)
 
         # --- Case à cocher sauvegarde CSV ---
         self.save_var   = IntVar()
-        self.save_check = Checkbutton(
-            self.frame, text="Save data",
+        self.save_check = Checkbutton(self.frame, text="Save data",
             variable=self.save_var,
             onvalue=1, offvalue=0,
-            bg="white", state="disabled",
-            command=self._toggle_save
-        )
+            bg=FRAME_COLOR, fg=TEXT_COLOR,
+            selectcolor=BTN_COLOR,
+            activebackground=FRAME_COLOR,
+            activeforeground=TEXT_COLOR,
+            state="disabled",
+            command=self._toggle_save)
 
         # Placement des widgets et création du gestionnaire de graphiques
         self.conn_gui_open()
@@ -943,7 +952,7 @@ class ConnGUI():
 
                 # Affichage de la grille et redessein du canvas
                 self.chart_master.figs[chart_idx][1].grid(
-                    color="b", linestyle="-", linewidth=0.2)
+                    color="#888888", linestyle="--", linewidth=0.5)
                 self.chart_master.figs[chart_idx][0].canvas.draw()
 
         except Exception as e:
@@ -1131,11 +1140,10 @@ class DisGUI():
             - Index impair : colonne 8 (droite)
             - Ligne : 4 + 4 * (index // 2)  — une nouvelle ligne toutes les 2 frames
         """
-        self.frames.append(LabelFrame(
-            self.root,
+        self.frames.append(LabelFrame(self.root,
             text=f"Display Manager-{len(self.frames) + 1}",
-            pady=5, padx=5, bg="white"
-        ))
+            pady=5, padx=5,
+            bg=FRAME_COLOR, fg=TEXT_COLOR))
         self.total_frames = len(self.frames) - 1
 
         if self.total_frames == 0:
@@ -1205,8 +1213,14 @@ class DisGUI():
         figsize = (8, 4) if self.total_frames == 0 else (6, 4)
         dpi     = 80     if self.total_frames == 0 else 60
 
-        fig    = plt.Figure(figsize=figsize, dpi=dpi)
+        fig = plt.Figure(figsize=figsize, dpi=dpi, facecolor=BG_COLOR)
         axes   = fig.add_subplot(111)
+        axes.set_facecolor(FRAME_COLOR)
+        axes.tick_params(colors=TEXT_COLOR)
+        axes.xaxis.label.set_color(TEXT_COLOR)
+        axes.yaxis.label.set_color(TEXT_COLOR)
+        for spine in axes.spines.values():
+            spine.set_edgecolor(TEXT_COLOR)
         canvas = FigureCanvasTkAgg(fig, master=self.frames[self.total_frames])
 
         self.figs.append([fig, axes, canvas])
@@ -1217,8 +1231,14 @@ class DisGUI():
         # Redimensionne le premier graphique lors de l'ajout du second
         if self.total_frames == 1:
             self.figs[0][2].get_tk_widget().destroy()
-            fig0    = plt.Figure(figsize=(6, 4), dpi=60)
-            axes0   = fig0.add_subplot(111)
+            fig0 = plt.Figure(figsize=(6, 4), dpi=60, facecolor=BG_COLOR)
+            axes0 = fig0.add_subplot(111)
+            axes0.set_facecolor(FRAME_COLOR)
+            axes0.tick_params(colors=TEXT_COLOR)
+            axes0.xaxis.label.set_color(TEXT_COLOR)
+            axes0.yaxis.label.set_color(TEXT_COLOR)
+            for spine in axes0.spines.values():
+                spine.set_edgecolor(TEXT_COLOR)
             canvas0 = FigureCanvasTkAgg(fig0, master=self.frames[0])
             self.figs[0] = [fig0, axes0, canvas0]
             canvas0.get_tk_widget().grid(
@@ -1238,23 +1258,25 @@ class DisGUI():
         """
         self.control_frames.append([])
 
-        btn_frame = LabelFrame(self.frames[self.total_frames], pady=5, bg="white")
+        btn_frame = LabelFrame(self.frames[self.total_frames],pady=5, bg=FRAME_COLOR)
         btn_frame.grid(column=0, row=0, padx=5, pady=5, sticky=N)
         self.control_frames[self.total_frames].append(btn_frame)
 
         btn_add = Button(
-            btn_frame, text="+", bg="white",
+            btn_frame, text="+",
+            bg=BTN_COLOR, fg=BTN_TEXT,
+            activebackground=ACCENT_COLOR, activeforeground=BG_COLOR,
             width=self.BTN_W, height=self.BTN_H,
-            command=partial(self._add_channel, self.channel_frames[self.total_frames])
-        )
+            command=partial(self._add_channel, self.channel_frames[self.total_frames]))
         btn_add.grid(column=0, row=0, padx=5, pady=5)
         self.control_frames[self.total_frames].append(btn_add)
 
         btn_del = Button(
-            btn_frame, text="-", bg="white",
+            btn_frame, text="-",
+            bg=BTN_COLOR, fg=BTN_TEXT,
+            activebackground=ACCENT_COLOR, activeforeground=BG_COLOR,
             width=self.BTN_W, height=self.BTN_H,
-            command=partial(self._delete_channel, self.channel_frames[self.total_frames])
-        )
+            command=partial(self._delete_channel, self.channel_frames[self.total_frames]))
         btn_del.grid(column=1, row=0, padx=5, pady=5)
         self.control_frames[self.total_frames].append(btn_del)
 
@@ -1274,7 +1296,7 @@ class DisGUI():
         self.option_vars.append([])
         self.fun_vars.append([])
 
-        ch_frame = LabelFrame(self.frames[self.total_frames], pady=5, bg="white")
+        ch_frame = LabelFrame(self.frames[self.total_frames], pady=5, bg=FRAME_COLOR)
         ch_frame.grid(column=0, row=1, padx=5, pady=5, rowspan=16, sticky=N)
 
         self.channel_frames[self.total_frames].append(ch_frame)
@@ -1298,16 +1320,17 @@ class DisGUI():
         if len(frame_widget.winfo_children()) >= self.MAX_CHANNELS_PER_FRAME:
             return
 
-        row_frame = LabelFrame(frame_widget, bg="white")
+        row_frame = LabelFrame(frame_widget, bg=FRAME_COLOR)
         row_frame.grid(column=0, row=len(frame_widget.winfo_children()) - 1)
 
         # Case a cocher pour afficher/masquer le canal
         self.view_vars[frame_idx].append(IntVar())
-        Checkbutton(
-            row_frame,
+        Checkbutton(row_frame,
             variable=self.view_vars[frame_idx][-1],
-            onvalue=1, offvalue=0, bg="white"
-        ).grid(row=0, column=0, padx=1)
+            onvalue=1, offvalue=0,
+            bg=FRAME_COLOR,
+            selectcolor=BTN_COLOR,
+            activebackground=FRAME_COLOR).grid(row=0, column=0, padx=1)
 
         self._add_channel_option(row_frame, frame_idx)
         self._add_channel_func(row_frame, frame_idx)
@@ -1333,7 +1356,10 @@ class DisGUI():
         )
 
         drop = OptionMenu(frame, var, *self.data.Channels)
-        drop.config(width=5)
+        drop.config(width=5,
+            bg=BTN_COLOR, fg=BTN_TEXT,
+            activebackground=ACCENT_COLOR, activeforeground=BG_COLOR)
+        drop["menu"].config(bg=BTN_COLOR, fg=BTN_TEXT)
         drop.grid(row=0, column=1, padx=1)
 
         # Premiere mise a jour immediate des labels
@@ -1354,7 +1380,10 @@ class DisGUI():
         self.fun_vars[frame_idx].append(var)
 
         drop = OptionMenu(frame, var, *functions)
-        drop.config(width=5)
+        drop.config(width=5,
+            bg=BTN_COLOR, fg=BTN_TEXT,
+            activebackground=ACCENT_COLOR, activeforeground=BG_COLOR)
+        drop["menu"].config(bg=BTN_COLOR, fg=BTN_TEXT)
         drop.grid(row=0, column=2, padx=1)
 
     def _delete_channel(self, channel_frame):
@@ -1399,8 +1428,14 @@ class DisGUI():
 
         # Recreation de la figure en taille maximale (8x4)
         self.figs[0][2].get_tk_widget().destroy()
-        fig    = plt.Figure(figsize=(8, 4), dpi=80)
-        axes   = fig.add_subplot(111)
+        fig = plt.Figure(figsize=(8, 4), dpi=80, facecolor=BG_COLOR)
+        axes = fig.add_subplot(111)
+        axes.set_facecolor(FRAME_COLOR)
+        axes.tick_params(colors=TEXT_COLOR)
+        axes.xaxis.label.set_color(TEXT_COLOR)
+        axes.yaxis.label.set_color(TEXT_COLOR)
+        for spine in axes.spines.values():
+            spine.set_edgecolor(TEXT_COLOR)
         canvas = FigureCanvasTkAgg(fig, master=self.frames[0])
         self.figs[0] = [fig, axes, canvas]
         canvas.get_tk_widget().grid(
@@ -1424,7 +1459,9 @@ class DisGUI():
             ax = self.figs[frame_index][1]
             ax.set_xlabel("Temps (s)", fontsize=12)
             ax.set_ylabel(self.data.ChannelName[channel], fontsize=12)
-            ax.legend()
+            handles, labels = ax.get_legend_handles_labels()
+            if handles:
+                ax.legend()
             self.figs[frame_index][2].draw()
         except Exception as e:
             self.logger.error(f"Impossible de mettre a jour les labels : {e}")
