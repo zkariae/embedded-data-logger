@@ -179,3 +179,86 @@ sudo docker ps
 |---------|-----|-------|
 | InfluxDB | http://localhost:8086 | admin / admin1234 |
 | Grafana  | http://localhost:3000 | admin / admin1234 |
+
+
+---
+
+## Guide d'utilisation
+
+### 1. Lancement de l'application
+
+```bash
+cd gui/src
+python3 Master.py
+```
+
+### 2. Authentification
+
+![Login](docs/screenshots/login.png)
+
+Connectez-vous avec vos identifiants définis dans `gui/config/users.json` :
+
+| Champ | Valeur par défaut |
+|-------|------------------|
+| User name | `admin` |
+| Password | défini dans users.json |
+
+### 3. Sélection du mode de communication
+
+Après login réussi, cliquez sur **Serial** pour ouvrir l'interface de communication série.
+
+### 4. Connexion série
+
+![Serial](docs/screenshots/Serial.png)
+
+| Etape | Action |
+|-------|--------|
+| 1 | Sélectionnez le port (`/dev/ttyUSB0` ou `/dev/ttyACM0`) |
+| 2 | Sélectionnez le baudrate (`115200`) |
+| 3 | Cliquez **Connect** |
+| 4 | Attendez **Sync Status : OK** et **Active channels : 4** |
+
+### 5. Démarrage du streaming
+
+![Streaming](docs/screenshots/Streaming.png)
+
+- Cliquez **Start** pour démarrer la réception des données
+- Les courbes s'affichent en temps réel sur le graphique
+- Cochez **Save data** pour sauvegarder en CSV et envoyer vers InfluxDB
+
+### 6. Gestion des graphiques
+
+![MultiChart](docs/screenshots/Multi_chart.png)
+
+| Bouton | Action |
+|--------|--------|
+| **Add Chart** | Ajoute un nouveau graphique |
+| **Delete Chart** | Supprime le dernier graphique |
+| **+** | Ajoute un canal sur le graphique |
+| **-** | Supprime un canal du graphique |
+
+> Maximum **4 graphiques** simultanés
+
+### 7. Indicateurs LED STM32
+
+| LED | Etat | Description |
+|-----|------|-------------|
+| Orange | WAIT_SYNC | En attente de connexion PC |
+| Bleue | IDLE | Connecte, stream arrete |
+| Verte | STREAMING | Envoi des donnees actif |
+| Rouge | default | Erreur / etat inconnu |
+
+### 8. Dashboard Grafana
+
+![Grafana](docs/screenshots/Grafana.png)
+
+Ouvrez `http://localhost:3000` dans votre navigateur :
+- Login : `admin` / `admin1234`
+- Dashboard : **Embedded Data Logger**
+- Les 4 canaux sont visibles en temps reel
+
+### 9. Reconnexion automatique
+
+En cas de deconnexion USB, une popup apparait automatiquement :
+- Cliquez **Yes** pour tenter la reconnexion (5 tentatives, 2s de delai)
+- Cliquez **No** pour annuler
