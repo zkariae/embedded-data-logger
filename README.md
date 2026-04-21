@@ -252,8 +252,6 @@ Après login réussi, cliquez sur **Serial** pour ouvrir l'interface de communic
 | Verte | STREAMING | Envoi des donnees actif |
 | Rouge | default | Erreur / etat inconnu |
 
-
-
 ### 8. Dashboard Grafana
 
 ![Grafana](docs/screenshots/Grafana.png)
@@ -298,3 +296,82 @@ timestamp,Voltage,Current,Temperature,Pressure
 | `Pressure` | Canal 3 — valeur fixe 3500 | valeur ADC |
 
 > Le dossier `gui/logs/` est ignore par Git (`.gitignore`).
+
+
+---
+
+
+## Protocole de communication UART
+
+### Paramètres de la liaison série
+
+| Paramètre       | Valeur                  |
+|-----------------|-------------------------|
+| Interface       | USART2 (PA2=TX, PA3=RX) |
+| Baudrate        | 115200                  |
+| Bits de données | 8                       |
+| Parité          | Aucune                  |
+| Bits de stop    | 1                       |
+| Reception       | Non bloquant (polling)  |
+
+---
+
+### Machine à états STM32
+          '?'                    'A'
+WAIT_SYNC ──────────────► IDLE ──────────────► STREAMING
+▲                       │  ▲                    │
+│          'P'          │  │       'S'          │
+└───────────────────────┘  └────────────────────┘
+'P'
+
+| Etat | LED | Description |
+|------|-----|-------------|
+| `WAIT_SYNC` | Orange | Attente de la commande de synchronisation |
+| `IDLE` | Bleue | Connecte, stream arrete |
+| `STREAMING` | Verte | Envoi periodique des donnees |
+| `default` | Rouge | Erreur / etat inconnu |
+
+---
+
+### Commandes PC → STM32
+
+| Commande | Trame | Description |
+|----------|-------|-------------|
+| Sync | `#?#\n` | Demande de synchronisation |
+| Start | `#A#\n` | Demarrage du flux de donnees |
+| Stop | `#S#\n` | Arret du flux de donnees |
+| Disconnect | `#P#\n` | Deconnexion |
+
+---
+
+### Reponses STM32 → PC
+
+| Situation | Trame | Description |
+|-----------|-------|-------------|
+| Sync OK | `#!#4#\r\n` | Sync reussie — 4 canaux actifs |
+| Donnees | `#D#v1#v2#v3#v4#v5#\n` | Trame de donnees |
+| Stop OK | `#STOP#\r\n` | Stream arrete |
+| Disconnect | `#DISCONNECTED#\r\n` | Deconnexion confirmee |
+| Erreur | `#E#OVF#\n` | Depassement buffer TX |
+
+---
+
+### Format de la trame de données
+#D#val1#val2#val3#val4#val5#\n
+
+| Champ | Description |
+|-------|-------------|
+| `D` | Marqueur de trame de donnees |
+| `val1` | Canal 0 — Voltage |
+| `val2` | Canal 1 — Current |
+| `val3` | Canal 2 — Temperature |
+| `val4` | Canal 3 — Pressure |
+| `val5` | Controle integrite = somme des chiffres decimaux |
+
+#### Exemple
+#D#206#157#1282#7677#14#\n
+val5 = len("206") + len("157") + len("1282") + len("7677")
+= 3 + 3 + 4 + 4
+= 14
+
+> Documentation complète : [`docs/protocol.md`](docs/protocol.md)
