@@ -203,6 +203,8 @@ Connectez-vous avec vos identifiants définis dans `gui/config/users.json` :
 | User name | `admin` |
 | Password | défini dans users.json |
 
+![Login](docs/screenshots/login2.png)
+
 ### 3. Sélection du mode de communication
 
 Après login réussi, cliquez sur **Serial** pour ouvrir l'interface de communication série.
@@ -220,7 +222,7 @@ Après login réussi, cliquez sur **Serial** pour ouvrir l'interface de communic
 
 ### 5. Démarrage du streaming
 
-![Streaming](docs/screenshots/Streaming.png)
+![Streaming](docs/screenshots/Streaming2.png)
 
 - Cliquez **Start** pour démarrer la réception des données
 - Les courbes s'affichent en temps réel sur le graphique
