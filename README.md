@@ -243,12 +243,16 @@ Après login réussi, cliquez sur **Serial** pour ouvrir l'interface de communic
 
 ### 7. Indicateurs LED STM32
 
+![Indicateurs](docs/screenshots/Indicateurs_LED.png)
+
 | LED | Etat | Description |
 |-----|------|-------------|
 | Orange | WAIT_SYNC | En attente de connexion PC |
 | Bleue | IDLE | Connecte, stream arrete |
 | Verte | STREAMING | Envoi des donnees actif |
 | Rouge | default | Erreur / etat inconnu |
+
+
 
 ### 8. Dashboard Grafana
 
@@ -264,3 +268,33 @@ Ouvrez `http://localhost:3000` dans votre navigateur :
 En cas de deconnexion USB, une popup apparait automatiquement :
 - Cliquez **Yes** pour tenter la reconnexion (5 tentatives, 2s de delai)
 - Cliquez **No** pour annuler
+
+![Reconnexion automatique](docs/screenshots/Reconnexion_automatique.png)
+
+
+---
+
+### 10. Données CSV enregistrées
+
+Les fichiers CSV sont sauvegardés automatiquement dans `gui/logs/`
+avec un nom horodaté :
+gui/logs/
+└── 20260422005625.csv   ← YYYYMMDDHHMMSS.csv
+
+#### Format des données
+timestamp,Voltage,Current,Temperature,Pressure
+0.0,4,1996,1282,3500
+0.0175,6,1994,1282,3500
+0.0319,8,1992,1282,3500
+0.0345,10,1990,1282,3500
+...
+
+| Colonne | Description | Unité |
+|---------|-------------|-------|
+| `timestamp` | Temps relatif depuis le debut du stream | secondes |
+| `Voltage` | Canal 0 — increment 0 → 2000 | valeur ADC |
+| `Current` | Canal 1 — decrement 2000 → 0 | valeur ADC |
+| `Temperature` | Canal 2 — valeur fixe 1282 | valeur ADC |
+| `Pressure` | Canal 3 — valeur fixe 3500 | valeur ADC |
+
+> Le dossier `gui/logs/` est ignore par Git (`.gitignore`).
