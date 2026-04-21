@@ -49,20 +49,22 @@ class InfluxClient:
         Args:
             channel_names (list) : noms des canaux ['Voltage', 'Current', ...]
             values        (list) : valeurs correspondantes [206, 157, ...]
-            timestamp     (float): horodatage en secondes
+            timestamp     (float): horodatage relatif (non utilise pour InfluxDB)
         """
         if self.write_api is None:
             return
 
         try:
+            from datetime import datetime, timezone
+
             point = Point("sensors")
 
             for name, value in zip(channel_names, values):
                 point = point.field(name, float(value))
 
+            # Utiliser le timestamp UTC actuel
             point = point.time(
-                int(timestamp * 1e9),
-                WritePrecision.NANOSECONDS
+                datetime.now(timezone.utc)
             )
 
             self.write_api.write(

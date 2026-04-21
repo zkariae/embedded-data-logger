@@ -19,6 +19,7 @@ import time
 from datetime import datetime
 
 import numpy as np
+from influx_client import InfluxClient
 
 from logger_config import setup_logger
 logger = setup_logger("DataMaster")
@@ -72,6 +73,8 @@ class DataMaster:
         self.int_msg   = []             # Valeurs entières du cycle courant
         self._ref_time = 0.0            # Temps de référence (horodatages relatifs)
         self.filename  = ""             # Nom du fichier CSV courant
+        self.logger = setup_logger("DataMaster") # Logger
+        self.influx = InfluxClient() # Client InfluxDB
 
         # ------------------------------------------------------------------
         # Fonctions d'affichage disponibles
@@ -271,6 +274,9 @@ class DataMaster:
         Si le fichier n'existe pas encore, ecrit d'abord une ligne
         d'en-tetes (timestamp + noms des canaux).
 
+        Ajoute une ligne au fichier CSV si la sauvegarde est activee.
+        Envoie egalement les donnees vers InfluxDB si active.
+
         Args:
             gui: Objet exposant gui.save (bool).
         """
@@ -293,7 +299,15 @@ class DataMaster:
             # Ecriture des donnees
             row = list(self.int_msg)
             row.insert(0, round(self.XData[-1], 4))
-            writer.writerow(row)    
+            writer.writerow(row)  
+
+        # Envoi vers InfluxDB
+        channel_names = [self.ChannelName[ch] for ch in self.Channels]
+        self.influx.send_data(
+            channel_names=channel_names,
+            values=self.int_msg,
+            timestamp=self.XData[-1]
+        )          
 
     # ------------------------------------------------------------------
     # Fonctions de tracé
