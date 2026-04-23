@@ -33,6 +33,7 @@
 #include "uart.h"
 #include "log.h"
 #include "iwdg.h"
+#include "dht11.h"
 
 /* ------------------------------------------------------------------
  * Constantes
@@ -40,6 +41,10 @@
 
 #define TX_BUFFER_SIZE  64U   /* Taille du buffer de transmission UART */
 #define NB_CHANNELS     4U    /* Nombre de canaux de donnees envoyes au PC */
+
+
+static DHT11_t dht11;
+
 
 /* ------------------------------------------------------------------
  * Machine a etats
@@ -65,9 +70,9 @@ static char          tx_buffer[TX_BUFFER_SIZE];
 
 /* Valeurs fixes des canaux de donnees */
 static int val1 = 0;    /* Canal 0 : valeur fixe */
-static int val2 = 2000;    /* Canal 1 : valeur fixe */
-static int val3 = 1282;   /* Canal 2 : valeur fixe */
-static int val4 = 3500;   /* Canal 3 : valeur fixe */
+static int val2 = 0;    /* Canal 1 : valeur fixe */
+static int val3 = 0;   /* Canal 2 : valeur fixe */
+static int val4 = 0;   /* Canal 3 : valeur fixe */
 static int val5 = 0;      /* Longueur totale des chiffres ASCII (integrite) */
 
 /* ------------------------------------------------------------------
@@ -286,13 +291,31 @@ static void handle_uart_command(char cmd)
  */
 static void send_data_frame(void)
 {
-    /* Incrementation de val1 : 0 -> 2000 par pas de 2*/
-    if(val1 < 2000)
-        val1 += 2;
+    DHT11_Status_t ret = dht11_read(&dht11);
+    switch (ret)
+    {
+        case DHT11_OK:
+            val1 = (int)dht11_get_humidity(&dht11);
+            val2 = (int)dht11_get_temperature(&dht11);
+            LOG_INFO("DHT11 lecture OK");
+            break;
 
-    /* Descrementation de val2 : 2000 -> par pas de 2 */
-    if(val2 > 0)
-        val2 -= 2;
+        case DHT11_ERR_TIMEOUT:
+            LOG_ERROR("DHT11 : timeout — verifier le cablage PA1");
+            break;
+
+        case DHT11_ERR_CHECKSUM:
+            LOG_ERROR("DHT11 : checksum invalide — donnees corrompues");
+            break;
+
+        case DHT11_ERR_PARAM:
+            LOG_ERROR("DHT11 : parametre invalide — pointeur NULL");
+            break;
+
+        default:
+            LOG_ERROR("DHT11 : erreur inconnue");
+            break;
+    }
 
     /* Calcul de val5 : integrite de la trame */
     val5 = count_digits((unsigned long)val1)
@@ -324,6 +347,8 @@ int main(void)
     gpio_init();
     systick_init();
     uart_init(UART_BAUD_115200);
+    /* Initialisaion de capteur dht11 */
+    dht11_init();
     /* Initialisation du watchdog — timeout 2 secondes */
     iwdg_init(2000);
 
