@@ -131,7 +131,7 @@ class Serial_Control:
             gui: Objet ConnGUI exposant gui.root et gui.data.
         """
         MAX_RECONNECT_ATTEMPTS = 5
-        RECONNECT_DELAY        = 2  # secondes
+        RECONNECT_DELAY        = 5  # secondes
 
         # Reinitialiser completement les donnees avant reconnexion
         gui.data.clear_data()
