@@ -10,6 +10,10 @@
  *
  * Protocole de communication :
  *   PC -> STM32 : '#?#'  -> reponse '#!#4#'          (sync, 4 canaux)
+ *   Canal 0 : Humidite    (DHT11)
+ *   Canal 1 : Temperature (DHT11)
+ *   Canal 2 : Luminosite  (BH1750)
+ *   Canal 3 : libre
  *   PC -> STM32 : '#A#'  -> debut du stream
  *   PC -> STM32 : '#S#'  -> arret du stream
  *   PC -> STM32 : '#P#'  -> deconnexion
@@ -34,7 +38,7 @@
 #include "log.h"
 #include "iwdg.h"
 #include "dht11.h"
-
+#include "bh1750.h"
 /* ------------------------------------------------------------------
  * Constantes
  * ------------------------------------------------------------------ */
@@ -69,10 +73,10 @@ static char          last_cmd      = 'S';
 static char          tx_buffer[TX_BUFFER_SIZE];
 
 /* Valeurs fixes des canaux de donnees */
-static int val1 = 0;    /* Canal 0 : valeur fixe */
-static int val2 = 0;    /* Canal 1 : valeur fixe */
-static int val3 = 0;   /* Canal 2 : valeur fixe */
-static int val4 = 0;   /* Canal 3 : valeur fixe */
+static int val1 = 0;   /* Canal 0 : Humidite (DHT11) */
+static int val2 = 0;   /* Canal 1 : Temperature (DHT11) */
+static int val3 = 0;   /* Canal 2 : luminosite BH1750 (lux) */ 
+static int val4 = 0;   /* Canal 3 : libre */
 static int val5 = 0;      /* Longueur totale des chiffres ASCII (integrite) */
 
 /* ------------------------------------------------------------------
@@ -316,7 +320,8 @@ static void send_data_frame(void)
             LOG_ERROR("DHT11 : erreur inconnue");
             break;
     }
-
+    /* Lecture BH1750 — luminosite en lux */
+    val3 = (int)bh1750_read_lux();
     /* Calcul de val5 : integrite de la trame */
     val5 = count_digits((unsigned long)val1)
          + count_digits((unsigned long)val2)
@@ -350,6 +355,9 @@ int main(void)
     uart_init(UART_BAUD_115200);
     /* Initialisaion de capteur dht11 */
     dht11_init();
+
+    /* Initialisation du capteur BH1750 */
+    bh1750_init();
     /* Initialisation du watchdog — timeout 2 secondes */
     //iwdg_init(2000);
 
