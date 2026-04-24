@@ -335,6 +335,7 @@ static void send_data_frame(void)
     val5 = 0;
 }
 
+
 /* ------------------------------------------------------------------
  * Point d'entree
  * ------------------------------------------------------------------ */
@@ -350,7 +351,7 @@ int main(void)
     /* Initialisaion de capteur dht11 */
     dht11_init();
     /* Initialisation du watchdog — timeout 2 secondes */
-    iwdg_init(2000);
+    //iwdg_init(2000);
 
     LOG_INFO("=== embedded-data-logger ===");
     LOG_INFO("En attente de synchronisation...");
@@ -378,7 +379,7 @@ int main(void)
         {
             case STREAMING:
                 send_data_frame();
-                delay_ms(10);
+                delay_ms(2000);
                 break;
 
             case IDLE:
