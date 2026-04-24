@@ -6,28 +6,6 @@
  * Les interruptions sont desactivees pendant la lecture des bits
  * pour garantir la precision du protocole 1-wire.
  *
- * CORRECTIONS par rapport a la version initiale :
- *
- *   [FIX 1] wait_level : valeur sentinelle UINT32_MAX pour timeout
- *           L'ancienne version retournait 0 en cas de timeout ET
- *           en cas de succes immediat -> faux positifs systematiques.
- *
- *   [FIX 2] Suppression de la verification prematuree apres pin_input()
- *           La ligne est encore HIGH (pull-up) juste apres le START,
- *           le DHT11 a besoin de 20-40us pour tirer la ligne LOW.
- *           On laisse desormais wait_level() gerer l'attente.
- *
- *   [FIX 3] Sequence reponse DHT11 corrigee
- *           Ordre correct : attendre LOW (~80us) puis HIGH (~80us),
- *           pas l'inverse.
- *
- *   [FIX 4] Pull-up interne PC0 active en mode input
- *           Sans pull-up (interne ou externe 4.7k), la ligne flotte
- *           et les niveaux lus sont aleatoires.
- *
- *   [FIX 5] tim2_init() privee — ne pas l'appeler depuis main()
- *           dht11_init() l'appelle en interne. Un double appel
- *           remettait TIM2_CNT a zero au mauvais moment.
  *
  * Auteur  : z_benakka193
  * Projet  : embedded-data-logger
