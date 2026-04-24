@@ -379,7 +379,7 @@ int main(void)
         {
             case STREAMING:
                 send_data_frame();
-                delay_ms(2000);
+                delay_ms(10);
                 break;
 
             case IDLE:
