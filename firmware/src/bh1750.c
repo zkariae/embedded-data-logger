@@ -15,28 +15,42 @@
 
 #include "bh1750.h"
 #include "systick.h"
+#include "log.h"
+
+/* ------------------------------------------------------------------
+ * Constantes
+ * ------------------------------------------------------------------ */
+
+#define I2C_TIMEOUT 10000UL   /* Timeout pour les attentes I2C */
 
 /* ------------------------------------------------------------------
  * Fonctions privees I2C
  * ------------------------------------------------------------------ */
 
 /**
- * @brief  Attend que le bit soit set dans le registre SR1.
+ * @brief  Attend que le bit soit set dans SR1 avec timeout.
  * @param  flag : bit a attendre
+ * @return 0 si OK, -1 si timeout
  */
-static void i2c_wait_flag(uint32_t flag)
+static int i2c_wait_flag(uint32_t flag)
 {
+    uint32_t timeout = I2C_TIMEOUT;
     while (!(I2C1_SR1 & flag))
-        ;
+    {
+        if (--timeout == 0)
+            return -1;
+    }
+    return 0;
 }
 
 /**
  * @brief  Genere la condition START sur le bus I2C.
+ * @return 0 si OK, -1 si timeout
  */
-static void i2c_start(void)
+static int i2c_start(void)
 {
     I2C1_CR1 |= I2C_CR1_START;
-    i2c_wait_flag(I2C_SR1_SB);
+    return i2c_wait_flag(I2C_SR1_SB);
 }
 
 /**
@@ -49,33 +63,38 @@ static void i2c_stop(void)
 
 /**
  * @brief  Envoie l'adresse du peripherique sur le bus I2C.
- * @param  addr    : adresse 7 bits du peripherique
- * @param  rw      : 0 = ecriture, 1 = lecture
+ * @param  addr : adresse 7 bits du peripherique
+ * @param  rw   : 0 = ecriture, 1 = lecture
+ * @return 0 si OK, -1 si timeout
  */
-static void i2c_send_addr(uint8_t addr, uint8_t rw)
+static int i2c_send_addr(uint8_t addr, uint8_t rw)
 {
     I2C1_DR = (uint32_t)((addr << 1) | rw);
-    i2c_wait_flag(I2C_SR1_ADDR);
+    if (i2c_wait_flag(I2C_SR1_ADDR) != 0)
+        return -1;
     /* Clear ADDR flag en lisant SR1 puis SR2 */
     (void)I2C1_SR1;
     (void)I2C1_SR2;
+    return 0;
 }
 
 /**
  * @brief  Envoie un octet sur le bus I2C.
  * @param  data : octet a envoyer
+ * @return 0 si OK, -1 si timeout
  */
-static void i2c_send_byte(uint8_t data)
+static int i2c_send_byte(uint8_t data)
 {
-    i2c_wait_flag(I2C_SR1_TXE);
+    if (i2c_wait_flag(I2C_SR1_TXE) != 0)
+        return -1;
     I2C1_DR = (uint32_t)data;
-    i2c_wait_flag(I2C_SR1_BTF);
+    return i2c_wait_flag(I2C_SR1_BTF);
 }
 
 /**
  * @brief  Lit un octet depuis le bus I2C.
  * @param  ack : 1 = envoyer ACK, 0 = envoyer NACK (dernier octet)
- * @return octet lu
+ * @return octet lu, ou 0 si timeout
  */
 static uint8_t i2c_read_byte(uint8_t ack)
 {
@@ -84,7 +103,9 @@ static uint8_t i2c_read_byte(uint8_t ack)
     else
         I2C1_CR1 &= ~I2C_CR1_ACK;
 
-    i2c_wait_flag(I2C_SR1_RXNE);
+    if (i2c_wait_flag(I2C_SR1_RXNE) != 0)
+        return 0;
+
     return (uint8_t)(I2C1_DR & 0xFF);
 }
 
@@ -108,7 +129,6 @@ void bh1750_init(void)
     RCC_APB1ENR |= (1UL << 21);  /* I2C1 clock  */
 
     /* 2. Configurer PB6 et PB7 en Alternate Function (AF4 = I2C1) */
-    /* MODER : AF mode (10) pour PB6 et PB7 */
     GPIOB_MODER &= ~((3UL << 12) | (3UL << 14));
     GPIOB_MODER |=  ((2UL << 12) | (2UL << 14));
 
@@ -131,30 +151,36 @@ void bh1750_init(void)
     I2C1_CR1 &= ~I2C_CR1_SWRST;
 
     /* 4. Configurer I2C1 en mode standard 100 kHz */
-    /* APB1 = 16 MHz */
-    I2C1_CR2  = 16UL;              /* FREQ = 16 MHz          */
-    I2C1_CCR  = 80UL;              /* CCR = 16MHz/(2*100kHz) */
-    I2C1_TRISE = 17UL;             /* TRISE = (1000ns/62.5ns)+1 */
+    I2C1_CR2   = 16UL;   /* FREQ = 16 MHz              */
+    I2C1_CCR   = 80UL;   /* CCR = 16MHz/(2*100kHz)     */
+    I2C1_TRISE = 17UL;   /* TRISE = (1000ns/62.5ns)+1  */
 
     /* 5. Activer I2C1 */
     I2C1_CR1 |= I2C_CR1_PE;
 
-    /* 6. Initialiser le BH1750 */
     delay_ms(10);
 
-    /* Power ON */
-    i2c_start();
-    i2c_send_addr(BH1750_ADDR, 0);
-    i2c_send_byte(BH1750_POWER_ON);
+    /* 6. Power ON */
+    if (i2c_start() != 0)
+    { i2c_stop(); LOG_ERROR("BH1750 : i2c_start failed (Power ON)"); return; }
+    if (i2c_send_addr(BH1750_ADDR, 0) != 0)
+    { i2c_stop(); LOG_ERROR("BH1750 : i2c_send_addr failed (Power ON)"); return; }
+    if (i2c_send_byte(BH1750_POWER_ON) != 0)
+    { i2c_stop(); LOG_ERROR("BH1750 : i2c_send_byte failed (Power ON)"); return; }
     i2c_stop();
+    LOG_INFO("BH1750 : Power ON OK");
     delay_ms(10);
 
-    /* Mode : Continuous High Resolution */
-    i2c_start();
-    i2c_send_addr(BH1750_ADDR, 0);
-    i2c_send_byte(BH1750_CONT_H_RES_MODE);
+    /* 7. Mode Continuous High Resolution */
+    if (i2c_start() != 0)
+    { i2c_stop(); LOG_ERROR("BH1750 : i2c_start failed (Mode)"); return; }
+    if (i2c_send_addr(BH1750_ADDR, 0) != 0)
+    { i2c_stop(); LOG_ERROR("BH1750 : i2c_send_addr failed (Mode)"); return; }
+    if (i2c_send_byte(BH1750_CONT_H_RES_MODE) != 0)
+    { i2c_stop(); LOG_ERROR("BH1750 : i2c_send_byte failed (Mode)"); return; }
     i2c_stop();
-    delay_ms(180);  /* Temps de mesure : 120-180ms */
+    LOG_INFO("BH1750 : Mode OK");
+    delay_ms(180);
 }
 
 /**
@@ -163,7 +189,7 @@ void bh1750_init(void)
  * Le BH1750 renvoie 2 octets (MSB + LSB).
  * Conversion : lux = (MSB << 8 | LSB) / 1.2
  *
- * @return Valeur en lux (0 - 65535)
+ * @return Valeur en lux (0 - 65535), 0 en cas d'erreur
  */
 uint16_t bh1750_read_lux(void)
 {
@@ -171,8 +197,8 @@ uint16_t bh1750_read_lux(void)
     uint8_t  lsb = 0;
     uint16_t raw = 0;
 
-    i2c_start();
-    i2c_send_addr(BH1750_ADDR, 1);  /* Lecture */
+    if (i2c_start() != 0)                   { i2c_stop(); return 0; }
+    if (i2c_send_addr(BH1750_ADDR, 1) != 0) { i2c_stop(); return 0; }
 
     msb = i2c_read_byte(1);   /* MSB — ACK  */
     lsb = i2c_read_byte(0);   /* LSB — NACK */
