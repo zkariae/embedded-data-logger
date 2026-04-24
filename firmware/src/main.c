@@ -295,33 +295,35 @@ static void handle_uart_command(char cmd)
  */
 static void send_data_frame(void)
 {
-    DHT11_Status_t ret = dht11_read(&dht11);
-    switch (ret)
+    static uint32_t dht11_counter = 0;
+
+    /* Lire DHT11 toutes les 20 iterations (DHT11 min 2s entre lectures) */
+    if (dht11_counter == 0)
     {
-        case DHT11_OK:
-            val1 = (int)dht11_get_humidity(&dht11);
-            val2 = (int)dht11_get_temperature(&dht11);
-            LOG_INFO("DHT11 lecture OK");
-            break;
-
-        case DHT11_ERR_TIMEOUT:
-            LOG_ERROR("DHT11 : timeout — verifier le cablage PA1");
-            break;
-
-        case DHT11_ERR_CHECKSUM:
-            LOG_ERROR("DHT11 : checksum invalide — donnees corrompues");
-            break;
-
-        case DHT11_ERR_PARAM:
-            LOG_ERROR("DHT11 : parametre invalide — pointeur NULL");
-            break;
-
-        default:
-            LOG_ERROR("DHT11 : erreur inconnue");
-            break;
+        DHT11_Status_t ret = dht11_read(&dht11);
+        switch (ret)
+        {
+            case DHT11_OK:
+                val1 = (int)dht11_get_humidity(&dht11);
+                val2 = (int)dht11_get_temperature(&dht11);
+                break;
+            case DHT11_ERR_TIMEOUT:
+                LOG_ERROR("DHT11 : timeout");
+                break;
+            case DHT11_ERR_CHECKSUM:
+                LOG_ERROR("DHT11 : checksum invalide");
+                break;
+            default:
+                break;
+        }
     }
+    dht11_counter = (dht11_counter + 1) % 200;
+
     /* Lecture BH1750 — luminosite en lux */
     val3 = (int)bh1750_read_lux();
+    if (val3 != 0)
+        LOG_INFO("BH1750 lecture OK");
+
     /* Calcul de val5 : integrite de la trame */
     val5 = count_digits((unsigned long)val1)
          + count_digits((unsigned long)val2)
@@ -353,13 +355,14 @@ int main(void)
     gpio_init();
     systick_init();
     uart_init(UART_BAUD_115200);
+    /* Initialisation du watchdog — timeout 2 secondes */
+    iwdg_init(2000);
     /* Initialisaion de capteur dht11 */
     dht11_init();
 
     /* Initialisation du capteur BH1750 */
     bh1750_init();
-    /* Initialisation du watchdog — timeout 2 secondes */
-    //iwdg_init(2000);
+
 
     LOG_INFO("=== embedded-data-logger ===");
     LOG_INFO("En attente de synchronisation...");
