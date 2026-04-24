@@ -4,21 +4,29 @@
  *
  * Capteur  : DHT11
  * Interface: 1-wire proprietaire (single bus)
- * Pin data : PA1
+ * Pin data : PC0
  * Mesures  : humidite (%), temperature (degC)
  *
+ * Timing base sur TIM2 (timer 32 bits) configure a 1 MHz
+ * -> 1 tick = 1 us, precision garantie independamment de
+ * l'optimisation du compilateur.
+ *
  * Protocole DHT11 :
- *   1. MCU envoie signal START : PA1 LOW pendant 18ms, puis HIGH
+ *   1. MCU envoie signal START : PC0 LOW pendant 18ms, puis HIGH
  *   2. DHT11 repond : LOW 80us, HIGH 80us
- *   3. DHT11 envoie 40 bits de donnees :
- *      - '0' : LOW 50us + HIGH 26-28us
- *      - '1' : LOW 50us + HIGH 70us
+ *   3. DHT11 envoie 40 bits :
+ *      - '0' : LOW 50us + HIGH ~26us
+ *      - '1' : LOW 50us + HIGH ~70us
  *   4. Structure des 40 bits :
- *      [7:0]  humidity_integer
- *      [15:8] humidity_decimal  (toujours 0 pour DHT11)
+ *      [7:0]   humidity_integer
+ *      [15:8]  humidity_decimal  (toujours 0 pour DHT11)
  *      [23:16] temperature_integer
- *      [31:24] temperature_decimal (toujours 0 pour DHT11)
- *      [39:32] checksum = somme des 4 octets precedents
+ *      [31:24] temperature_decimal
+ *      [39:32] checksum
+ *
+ * CORRECTIONS appliquees :
+ *   - Pull-up interne PC0 active en mode input (evite bus flottant)
+ *   - Valeur sentinelle UINT32_MAX dans wait_level (evite faux timeout)
  *
  * Auteur  : z_benakka193
  * Projet  : embedded-data-logger
@@ -30,43 +38,68 @@
 #include <stdint.h>
 
 /*==============================================================
-  Pin DATA — PA1
+  Pin DATA — PC0
 ==============================================================*/
-#define DHT11_GPIO_BASE     0x40020000UL   /* GPIOA base          */
-#define DHT11_PIN           1U             /* PA1                 */
+#define DHT11_GPIO_BASE     0x40020800UL   /* GPIOC base */
+#define DHT11_PIN           0U             /* PC0        */
 
-/* Registres GPIOA necessaires */
-#define DHT11_GPIOA_MODER   (*(volatile uint32_t *)(DHT11_GPIO_BASE + 0x00UL))
-#define DHT11_GPIOA_ODR     (*(volatile uint32_t *)(DHT11_GPIO_BASE + 0x14UL))
-#define DHT11_GPIOA_IDR     (*(volatile uint32_t *)(DHT11_GPIO_BASE + 0x10UL))
-#define DHT11_GPIOA_PUPDR   (*(volatile uint32_t *)(DHT11_GPIO_BASE + 0x0CUL))
-
-/* RCC — horloge GPIOA (deja active par uart.c, mais on la reactive par securite) */
-#define DHT11_RCC_BASE      0x40023800UL
-#define DHT11_RCC_AHB1ENR   (*(volatile uint32_t *)(DHT11_RCC_BASE + 0x30UL))
-#define DHT11_RCC_GPIOAEN   (1UL << 0U)
+/* Registres GPIOC */
+#define DHT11_GPIOC_MODER   (*(volatile uint32_t *)(DHT11_GPIO_BASE + 0x00UL))
+#define DHT11_GPIOC_ODR     (*(volatile uint32_t *)(DHT11_GPIO_BASE + 0x14UL))
+#define DHT11_GPIOC_IDR     (*(volatile uint32_t *)(DHT11_GPIO_BASE + 0x10UL))
+#define DHT11_GPIOC_PUPDR   (*(volatile uint32_t *)(DHT11_GPIO_BASE + 0x0CUL))
 
 /*==============================================================
-  Timing (us) — base SysTick 16 MHz HSI
+  RCC
 ==============================================================*/
-#define DHT11_START_LOW_MS  18U    /* Signal START : LOW 18 ms          */
-#define DHT11_START_HIGH_US 40U    /* Signal START : HIGH 40 us         */
-#define DHT11_RESPONSE_US   80U    /* Reponse DHT11 : 80 us LOW + HIGH  */
-#define DHT11_TIMEOUT_US    200U   /* Timeout lecture bit (iterations)  */
-#define DHT11_BIT_THRESHOLD 40U    /* Seuil '0'/'1' : > 40us = bit '1' */
+#define DHT11_RCC_BASE      0x40023800UL
+#define DHT11_RCC_AHB1ENR   (*(volatile uint32_t *)(DHT11_RCC_BASE + 0x30UL))
+#define DHT11_RCC_APB1ENR   (*(volatile uint32_t *)(DHT11_RCC_BASE + 0x40UL))
+#define DHT11_RCC_GPIOCEN   (1UL << 2U)   /* GPIOC = bit 2 */
+#define DHT11_RCC_TIM2EN    (1UL << 0U)   /* TIM2  = bit 0 */
 
-/* Nombre de bits transmis */
-#define DHT11_DATA_BITS     40U
+/*==============================================================
+  TIM2 — Timer 32 bits, 1 MHz (1 tick = 1 us)
+  PCLK1 = 16 MHz HSI -> PSC = 15 -> 16/(15+1) = 1 MHz
+==============================================================*/
+#define TIM2_BASE           0x40000000UL
+#define TIM2_CR1            (*(volatile uint32_t *)(TIM2_BASE + 0x00UL))
+#define TIM2_PSC            (*(volatile uint32_t *)(TIM2_BASE + 0x28UL))
+#define TIM2_ARR            (*(volatile uint32_t *)(TIM2_BASE + 0x2CUL))
+#define TIM2_CNT            (*(volatile uint32_t *)(TIM2_BASE + 0x24UL))
+#define TIM2_EGR            (*(volatile uint32_t *)(TIM2_BASE + 0x14UL))
+
+/* Bits TIM2_CR1 */
+#define TIM2_CR1_CEN        (1UL << 0U)   /* Counter enable    */
+
+/* Bits TIM2_EGR */
+#define TIM2_EGR_UG         (1UL << 0U)   /* Update generation */
+
+/*==============================================================
+  Timing DHT11 (en microsecondes)
+==============================================================*/
+#define DHT11_START_LOW_MS  18U    /* START : LOW 18 ms          */
+#define DHT11_START_HIGH_US 40U    /* START : HIGH 40 us         */
+#define DHT11_TIMEOUT_US    200U   /* Timeout signal : 200 us    */
+                                   /* (80us reponse + marge)     */
+#define DHT11_BIT_THRESHOLD 50U    /* Seuil '0'/'1' : 50 us      */
+#define DHT11_DATA_BITS     40U    /* Nombre de bits a lire       */
+
+/*==============================================================
+  Valeur sentinelle wait_level
+  UINT32_MAX ne peut pas etre une duree legitime -> indique timeout
+==============================================================*/
+#define DHT11_WAIT_TIMEOUT  0xFFFFFFFFUL
 
 /*==============================================================
   Codes de retour
 ==============================================================*/
 typedef enum
 {
-    DHT11_OK           = 0,  /**< Succes                          */
-    DHT11_ERR_TIMEOUT,       /**< Timeout attente reponse DHT11   */
-    DHT11_ERR_CHECKSUM,      /**< Checksum invalide               */
-    DHT11_ERR_PARAM          /**< Parametre invalide              */
+    DHT11_OK           = 0,  /**< Succes                        */
+    DHT11_ERR_TIMEOUT,       /**< Timeout attente reponse       */
+    DHT11_ERR_CHECKSUM,      /**< Checksum invalide             */
+    DHT11_ERR_PARAM          /**< Parametre invalide            */
 } DHT11_Status_t;
 
 /*==============================================================
@@ -74,8 +107,8 @@ typedef enum
 ==============================================================*/
 typedef struct
 {
-    uint8_t humidity;       /**< Humidite en %          (0-100)  */
-    uint8_t temperature;    /**< Temperature en degC    (0-50)   */
+    uint8_t humidity;       /**< Humidite en %       (0-100) */
+    uint8_t temperature;    /**< Temperature en degC (0-50)  */
 } DHT11_t;
 
 /*==============================================================
@@ -83,38 +116,43 @@ typedef struct
 ==============================================================*/
 
 /**
- * @brief  Initialise la pin PA1 pour le DHT11.
+ * @brief  Initialise TIM2 a 1 MHz et PC0 pour le DHT11.
+ *         - Active l'horloge GPIOC et TIM2
+ *         - Configure PC0 en output push-pull, HIGH (repos)
+ *         - Active le pull-up interne sur PC0
+ *         - Attend 1s pour laisser le capteur se stabiliser
  *
- * Configure PA1 en output push-pull par defaut (idle HIGH).
+ * @note   A appeler UNE SEULE FOIS au demarrage.
+ *         Ne pas appeler tim2_init() separement dans main().
  */
 void dht11_init(void);
 
 /**
- * @brief  Lit la temperature et l'humidite du DHT11.
+ * @brief  Lit temperature et humidite du DHT11.
  *
- * Envoie le signal START, lit les 40 bits, verifie le checksum
- * et met a jour dev->humidity et dev->temperature.
+ * @param  dev  Pointeur vers DHT11_t (non NULL)
+ * @return DHT11_OK           : lecture reussie
+ *         DHT11_ERR_TIMEOUT  : pas de reponse du capteur
+ *         DHT11_ERR_CHECKSUM : donnees corrompues
+ *         DHT11_ERR_PARAM    : dev == NULL
  *
- * Duree totale : ~22 ms (bloquant).
- *
- * @param  dev  Pointeur vers la structure DHT11_t
- * @return DHT11_Status_t
+ * @note   Appeler au minimum toutes les 2 secondes.
+ *         Les interruptions sont desactivees pendant la
+ *         lecture des bits (~5ms max).
  */
 DHT11_Status_t dht11_read(DHT11_t *dev);
 
 /**
  * @brief  Retourne la derniere humidite lue (%).
- *
- * @param  dev  Pointeur vers la structure DHT11_t
- * @return Humidite en % (uint8_t)
+ * @param  dev  Pointeur vers DHT11_t (non NULL)
+ * @return humidite en % ou 0 si dev == NULL
  */
 uint8_t dht11_get_humidity(const DHT11_t *dev);
 
 /**
  * @brief  Retourne la derniere temperature lue (degC).
- *
- * @param  dev  Pointeur vers la structure DHT11_t
- * @return Temperature en degC (uint8_t)
+ * @param  dev  Pointeur vers DHT11_t (non NULL)
+ * @return temperature en degC ou 0 si dev == NULL
  */
 uint8_t dht11_get_temperature(const DHT11_t *dev);
 
