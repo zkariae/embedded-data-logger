@@ -295,17 +295,12 @@ static void handle_uart_command(char cmd)
  */
 static void send_data_frame(void)
 {
-    //static uint32_t dht11_counter  = 0;
-    // static uint32_t bh1750_counter = 0;
+    static uint32_t dht11_counter = 0;
 
-    /* Lire BH1750 seulement quand DHT11 n'est PAS en cours de lecture */
-   // if (dht11_counter != 0)
-    //{
-        val3 = (int)bh1750_read_lux();
-    //}
+    /* Lire BH1750 — luminosite en lux */
+    val3 = (int)bh1750_read_lux();
 
-    /* Lire DHT11 toutes les 200 iterations */
-    /*
+    /* Lire DHT11 toutes les 200 iterations (min 2s entre lectures) */
     if (dht11_counter == 0)
     {
         DHT11_Status_t ret = dht11_read(&dht11);
@@ -315,15 +310,16 @@ static void send_data_frame(void)
                 val1 = (int)dht11_get_humidity(&dht11);
                 val2 = (int)dht11_get_temperature(&dht11);
                 break;
+            case DHT11_ERR_TIMEOUT:
+                LOG_ERROR("DHT11 : timeout");
+                break;
             default:
                 break;
         }
     }
     dht11_counter = (dht11_counter + 1) % 200;
-    */
 
-
-    /* Calcul val5 */
+    /* Calcul val5 : integrite de la trame */
     val5 = count_digits((unsigned long)val1)
          + count_digits((unsigned long)val2)
          + count_digits((unsigned long)val3)
@@ -348,48 +344,36 @@ int main(void)
 {
     char rx_char = 0;
 
-    /* Initialisation des peripheriques */
     gpio_init();
     systick_init();
     uart_init(UART_BAUD_115200);
-    LOG_INFO("=== Step 1 : uart OK ===");
-    /* Initialisaion de capteur dht11 */
-    //dht11_init();
-    //LOG_INFO("=== Step 2 : dht11 OK ===");
-    /* Initialisation du capteur BH1750 */
+
+    dht11_init();
     bh1750_init();
-    LOG_INFO("=== Step 3 : bh1750 OK ===");
-    /* Initialisation du watchdog — timeout 2 secondes */
     iwdg_init(2000);
-    LOG_INFO("=== Step 4 : iwdg OK ===");
 
     LOG_INFO("=== embedded-data-logger ===");
     LOG_INFO("En attente de synchronisation...");
 
-    /* Etat initial : WAIT_SYNC -> LED orange */
     update_leds(current_state);
 
     while (1)
     {
-
-        /* --- Reception UART --- */
         rx_char = uart_receive_char();
 
         if (rx_char != 0 || last_cmd == 'A')
         {
             if (rx_char != 0)
                 last_cmd = rx_char;
-
             handle_uart_command(last_cmd);
             update_leds(current_state);
         }
 
-        /* --- Actions selon l'etat courant --- */
         switch (current_state)
         {
             case STREAMING:
                 send_data_frame();
-                delay_ms(500);
+                delay_ms(200);
                 break;
 
             case IDLE:
@@ -397,7 +381,7 @@ int main(void)
             default:
                 break;
         }
-        /* Rafraichir le watchdog — empeche le reset */
+
         iwdg_refresh();
     }
 }

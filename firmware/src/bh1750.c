@@ -225,13 +225,6 @@ void bh1750_init(void)
     /* 6. Power ON */
     if (i2c_start() != 0)
     { i2c_stop(); LOG_ERROR("BH1750 : i2c_start failed (Power ON)"); return; }
-
-    LOG_INFO("BH1750 : START OK");
-    uart_send_int((int32_t)I2C1_SR1);
-    uart_send_string(" <- SR1\r\n");
-    uart_send_int((int32_t)I2C1_SR2);
-    uart_send_string(" <- SR2\r\n");
-
     if (i2c_send_addr(BH1750_ADDR, 0) != 0)
     { i2c_stop(); LOG_ERROR("BH1750 : i2c_send_addr failed (Power ON)"); return; }
     if (i2c_send_byte(BH1750_POWER_ON) != 0)
@@ -309,8 +302,7 @@ uint16_t bh1750_read_lux(void)
     lsb = (uint8_t)(I2C1_DR & 0xFF);
 
     raw = (uint16_t)((msb << 8) | lsb);
-    uart_send_int((int32_t)raw);
-    uart_send_string(" <- raw lux\r\n");
+
 
     return (uint16_t)(raw * 10 / 12);
 }
