@@ -32,6 +32,7 @@
 #define GPIOB_OSPEEDR   (*(volatile uint32_t *)(GPIOB_BASE + 0x08UL))
 #define GPIOB_PUPDR     (*(volatile uint32_t *)(GPIOB_BASE + 0x0CUL))
 #define GPIOB_AFRL      (*(volatile uint32_t *)(GPIOB_BASE + 0x20UL))
+#define GPIOB_ODR   (*(volatile uint32_t *)(GPIOB_BASE + 0x14UL))
 
 /* I2C1 */
 #define I2C1_BASE       0x40005400UL
@@ -65,6 +66,7 @@
 #define BH1750_POWER_ON         0x01UL  /* Power on              */
 #define BH1750_RESET            0x07UL  /* Reset data register   */
 #define BH1750_CONT_H_RES_MODE  0x10UL  /* Continuous high res   */
+#define BH1750_ONE_TIME_H_RES_MODE  0x20UL  /* One time high res */
 
 /* ------------------------------------------------------------------
  * Interface publique

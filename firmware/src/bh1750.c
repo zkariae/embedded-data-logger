@@ -114,6 +114,64 @@ static uint8_t i2c_read_byte(uint8_t ack)
  * ------------------------------------------------------------------ */
 
 /**
+ * @brief  Recuperation du bus I2C bloque.
+ *         Genere 9 impulsions d'horloge manuelles sur SCL
+ *         pour debloquer un peripherique I2C bloque.
+ */
+static void i2c_bus_recovery(void)
+{
+    /* Desactiver I2C1 */
+    I2C1_CR1 &= ~I2C_CR1_PE;
+    delay_ms(5);
+
+    /* Configurer PB6 (SCL) et PB7 (SDA) en GPIO output */
+    GPIOB_MODER &= ~((3UL << 12) | (3UL << 14));
+    GPIOB_MODER |=  ((1UL << 12) | (1UL << 14));
+
+    /* SDA et SCL HIGH */
+    GPIOB_ODR |= (1UL << 6) | (1UL << 7);
+    delay_ms(5);
+
+    /* Generer 9 impulsions d'horloge */
+    for (int i = 0; i < 9; i++)
+    {
+        GPIOB_ODR &= ~(1UL << 6);  /* SCL LOW  */
+        delay_ms(2);
+        GPIOB_ODR |=  (1UL << 6);  /* SCL HIGH */
+        delay_ms(2);
+    }
+
+    /* Condition STOP manuelle */
+    GPIOB_ODR &= ~(1UL << 7);  /* SDA LOW  */
+    delay_ms(2);
+    GPIOB_ODR |=  (1UL << 6);  /* SCL HIGH */
+    delay_ms(2);
+    GPIOB_ODR |=  (1UL << 7);  /* SDA HIGH */
+    delay_ms(5);
+
+    /* Reconfigurer PB6 et PB7 en AF4 */
+    GPIOB_MODER &= ~((3UL << 12) | (3UL << 14));
+    GPIOB_MODER |=  ((2UL << 12) | (2UL << 14));
+    delay_ms(5);
+
+    /* Reset complet I2C1 */
+    I2C1_CR1 |= I2C_CR1_SWRST;
+    delay_ms(10);
+    I2C1_CR1 &= ~I2C_CR1_SWRST;
+    delay_ms(10);
+
+    /* Reconfigurer I2C1 */
+    I2C1_CR2   = 16UL;
+    I2C1_CCR   = 80UL;
+    I2C1_TRISE = 17UL;
+
+    /* Reactiver I2C1 */
+    I2C1_CR1 |= I2C_CR1_PE;
+    delay_ms(5);
+}
+
+
+/**
  * @brief  Initialise I2C1 et le capteur BH1750.
  *
  * Configuration I2C :
@@ -124,6 +182,9 @@ static uint8_t i2c_read_byte(uint8_t ack)
  */
 void bh1750_init(void)
 {
+    /* Recovery du bus I2C si bloque */
+    i2c_bus_recovery();
+
     /* 1. Activer les horloges GPIOB et I2C1 */
     RCC_AHB1ENR |= (1UL << 1);   /* GPIOB clock */
     RCC_APB1ENR |= (1UL << 21);  /* I2C1 clock  */
@@ -146,9 +207,11 @@ void bh1750_init(void)
     GPIOB_AFRL &= ~((0xFUL << 24) | (0xFUL << 28));
     GPIOB_AFRL |=  ((4UL  << 24) | (4UL  << 28));
 
-    /* 3. Reset I2C1 */
+    /* 3. Reset complet I2C1 */
     I2C1_CR1 |= I2C_CR1_SWRST;
+    delay_ms(10);
     I2C1_CR1 &= ~I2C_CR1_SWRST;
+    delay_ms(10);
 
     /* 4. Configurer I2C1 en mode standard 100 kHz */
     I2C1_CR2   = 16UL;   /* FREQ = 16 MHz              */
@@ -157,12 +220,18 @@ void bh1750_init(void)
 
     /* 5. Activer I2C1 */
     I2C1_CR1 |= I2C_CR1_PE;
-
     delay_ms(10);
 
     /* 6. Power ON */
     if (i2c_start() != 0)
     { i2c_stop(); LOG_ERROR("BH1750 : i2c_start failed (Power ON)"); return; }
+
+    LOG_INFO("BH1750 : START OK");
+    uart_send_int((int32_t)I2C1_SR1);
+    uart_send_string(" <- SR1\r\n");
+    uart_send_int((int32_t)I2C1_SR2);
+    uart_send_string(" <- SR2\r\n");
+
     if (i2c_send_addr(BH1750_ADDR, 0) != 0)
     { i2c_stop(); LOG_ERROR("BH1750 : i2c_send_addr failed (Power ON)"); return; }
     if (i2c_send_byte(BH1750_POWER_ON) != 0)
@@ -171,12 +240,12 @@ void bh1750_init(void)
     LOG_INFO("BH1750 : Power ON OK");
     delay_ms(10);
 
-    /* 7. Mode Continuous High Resolution */
+    /* 7. Mode : One Time High Resolution */
     if (i2c_start() != 0)
     { i2c_stop(); LOG_ERROR("BH1750 : i2c_start failed (Mode)"); return; }
     if (i2c_send_addr(BH1750_ADDR, 0) != 0)
     { i2c_stop(); LOG_ERROR("BH1750 : i2c_send_addr failed (Mode)"); return; }
-    if (i2c_send_byte(BH1750_CONT_H_RES_MODE) != 0)
+    if (i2c_send_byte(BH1750_ONE_TIME_H_RES_MODE) != 0)
     { i2c_stop(); LOG_ERROR("BH1750 : i2c_send_byte failed (Mode)"); return; }
     i2c_stop();
     LOG_INFO("BH1750 : Mode OK");
@@ -193,20 +262,55 @@ void bh1750_init(void)
  */
 uint16_t bh1750_read_lux(void)
 {
-    uint8_t  msb = 0;
-    uint8_t  lsb = 0;
-    uint16_t raw = 0;
+    uint8_t  msb     = 0;
+    uint8_t  lsb     = 0;
+    uint16_t raw     = 0;
+    uint32_t timeout = 0;
 
-    if (i2c_start() != 0)                   { i2c_stop(); return 0; }
-    if (i2c_send_addr(BH1750_ADDR, 1) != 0) { i2c_stop(); return 0; }
-
-    msb = i2c_read_byte(1);   /* MSB — ACK  */
-    lsb = i2c_read_byte(0);   /* LSB — NACK */
-
+    /* Envoyer commande One Time avant chaque lecture */
+    if (i2c_start() != 0)
+    { i2c_stop(); LOG_ERROR("BH1750 read: START1 failed"); return 0; }
+    if (i2c_send_addr(BH1750_ADDR, 0) != 0)
+    { i2c_stop(); LOG_ERROR("BH1750 read: ADDR1 failed"); return 0; }
+    if (i2c_send_byte(BH1750_ONE_TIME_H_RES_MODE) != 0)
+    { i2c_stop(); LOG_ERROR("BH1750 read: CMD failed"); return 0; }
     i2c_stop();
+    delay_ms(180);   /* Attendre fin de mesure */
+
+    /* Lire le resultat */
+    if (i2c_start() != 0)
+    { i2c_stop(); LOG_ERROR("BH1750 read: START2 failed"); return 0; }
+    if (i2c_send_addr(BH1750_ADDR, 1) != 0)
+    { i2c_stop(); LOG_ERROR("BH1750 read: ADDR2 failed"); return 0; }
+
+    /* Activer ACK */
+    I2C1_CR1 |= I2C_CR1_ACK;
+
+    /* Clear ADDR flag */
+    (void)I2C1_SR1;
+    (void)I2C1_SR2;
+
+    /* Attendre MSB */
+    timeout = 10000;
+    while (!(I2C1_SR1 & I2C_SR1_RXNE))
+        if (--timeout == 0) { LOG_ERROR("BH1750 read: MSB failed"); return 0; }
+    msb = (uint8_t)(I2C1_DR & 0xFF);
+
+    /* Desactiver ACK avant de lire LSB */
+    I2C1_CR1 &= ~I2C_CR1_ACK;
+
+    /* Programmer STOP */
+    I2C1_CR1 |= I2C_CR1_STOP;
+
+    /* Attendre LSB */
+    timeout = 10000;
+    while (!(I2C1_SR1 & I2C_SR1_RXNE))
+        if (--timeout == 0) { LOG_ERROR("BH1750 read: LSB failed"); return 0; }
+    lsb = (uint8_t)(I2C1_DR & 0xFF);
 
     raw = (uint16_t)((msb << 8) | lsb);
+    uart_send_int((int32_t)raw);
+    uart_send_string(" <- raw lux\r\n");
 
-    /* Conversion : lux = raw / 1.2 */
     return (uint16_t)(raw * 10 / 12);
 }

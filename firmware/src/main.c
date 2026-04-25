@@ -295,9 +295,17 @@ static void handle_uart_command(char cmd)
  */
 static void send_data_frame(void)
 {
-    static uint32_t dht11_counter = 0;
+    //static uint32_t dht11_counter  = 0;
+    // static uint32_t bh1750_counter = 0;
 
-    /* Lire DHT11 toutes les 20 iterations (DHT11 min 2s entre lectures) */
+    /* Lire BH1750 seulement quand DHT11 n'est PAS en cours de lecture */
+   // if (dht11_counter != 0)
+    //{
+        val3 = (int)bh1750_read_lux();
+    //}
+
+    /* Lire DHT11 toutes les 200 iterations */
+    /*
     if (dht11_counter == 0)
     {
         DHT11_Status_t ret = dht11_read(&dht11);
@@ -307,34 +315,23 @@ static void send_data_frame(void)
                 val1 = (int)dht11_get_humidity(&dht11);
                 val2 = (int)dht11_get_temperature(&dht11);
                 break;
-            case DHT11_ERR_TIMEOUT:
-                LOG_ERROR("DHT11 : timeout");
-                break;
-            case DHT11_ERR_CHECKSUM:
-                LOG_ERROR("DHT11 : checksum invalide");
-                break;
             default:
                 break;
         }
     }
     dht11_counter = (dht11_counter + 1) % 200;
+    */
 
-    /* Lecture BH1750 — luminosite en lux */
-    val3 = (int)bh1750_read_lux();
-    if (val3 != 0)
-        LOG_INFO("BH1750 lecture OK");
 
-    /* Calcul de val5 : integrite de la trame */
+    /* Calcul val5 */
     val5 = count_digits((unsigned long)val1)
          + count_digits((unsigned long)val2)
          + count_digits((unsigned long)val3)
          + count_digits((unsigned long)val4);
 
-    /* Construction et envoi de la trame */
     if (build_frame() == 0)
     {
         uart_send_string("#E#OVF#\n");
-        LOG_INFO("Erreur : trame trop longue");
         return;
     }
 
@@ -355,14 +352,16 @@ int main(void)
     gpio_init();
     systick_init();
     uart_init(UART_BAUD_115200);
-    /* Initialisation du watchdog — timeout 2 secondes */
-    iwdg_init(2000);
+    LOG_INFO("=== Step 1 : uart OK ===");
     /* Initialisaion de capteur dht11 */
-    dht11_init();
-
+    //dht11_init();
+    //LOG_INFO("=== Step 2 : dht11 OK ===");
     /* Initialisation du capteur BH1750 */
     bh1750_init();
-
+    LOG_INFO("=== Step 3 : bh1750 OK ===");
+    /* Initialisation du watchdog — timeout 2 secondes */
+    iwdg_init(2000);
+    LOG_INFO("=== Step 4 : iwdg OK ===");
 
     LOG_INFO("=== embedded-data-logger ===");
     LOG_INFO("En attente de synchronisation...");
@@ -390,7 +389,7 @@ int main(void)
         {
             case STREAMING:
                 send_data_frame();
-                delay_ms(10);
+                delay_ms(500);
                 break;
 
             case IDLE:
