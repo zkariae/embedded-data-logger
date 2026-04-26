@@ -38,7 +38,11 @@ FRAME_COLOR  = "#2d2d2d"   # Fond des frames
 TEXT_COLOR   = "#ffffff"   # Texte blanc
 ACCENT_COLOR = "#00ff99"   # Couleur accent vert
 BTN_COLOR    = "#3d3d3d"   # Fond boutons
-BTN_TEXT     = "#ffffff"   # Texte boutons
+BTN_TEXT     = "#ffffff"   # Texte 
+
+PLOT_BG_COLOR = "#e8e8e8"   # Fond graphique gris clair (style Matlab)
+PLOT_TEXT_COLOR = "#ffffff"  # Texte axes blanc
+PLOT_GRID_COLOR = "#000000"   # Grille noire
 
 # ==============================================================================
 # Dimensions de l'interface — 1920x1080, 2 colonnes, 4 graphiques max
@@ -966,8 +970,8 @@ class ConnGUI():
                     self.data.FunctionMaster[func_name](self)
 
                 # Affichage de la grille et redessein du canvas
-                self.chart_master.figs[chart_idx][1].grid(
-                    color="#888888", linestyle="--", linewidth=0.5)
+                    self.chart_master.figs[chart_idx][1].grid(
+                        color=PLOT_GRID_COLOR, linestyle="--", linewidth=0.3)
                 self.chart_master.figs[chart_idx][0].canvas.draw()
 
         except Exception as e:
@@ -1234,12 +1238,12 @@ class DisGUI():
 
         fig = plt.Figure(figsize=figsize, dpi=dpi, facecolor=BG_COLOR)
         axes   = fig.add_subplot(111)
-        axes.set_facecolor(FRAME_COLOR)
-        axes.tick_params(colors=TEXT_COLOR)
-        axes.xaxis.label.set_color(TEXT_COLOR)
-        axes.yaxis.label.set_color(TEXT_COLOR)
+        axes.set_facecolor(PLOT_BG_COLOR)
+        axes.tick_params(colors=PLOT_TEXT_COLOR)
+        axes.xaxis.label.set_color(PLOT_TEXT_COLOR)
+        axes.yaxis.label.set_color(PLOT_TEXT_COLOR)
         for spine in axes.spines.values():
-            spine.set_edgecolor(TEXT_COLOR)
+            spine.set_edgecolor(PLOT_TEXT_COLOR)
         canvas = FigureCanvasTkAgg(fig, master=self.frames[self.total_frames])
 
         self.figs.append([fig, axes, canvas])
@@ -1252,12 +1256,12 @@ class DisGUI():
             self.figs[0][2].get_tk_widget().destroy()
             fig0    = plt.Figure(figsize=(FIG_W_MULTI, FIG_H_MULTI), dpi=FIG_DPI, facecolor=BG_COLOR)
             axes0   = fig0.add_subplot(111)
-            axes0.set_facecolor(FRAME_COLOR)
-            axes0.tick_params(colors=TEXT_COLOR)
-            axes0.xaxis.label.set_color(TEXT_COLOR)
-            axes0.yaxis.label.set_color(TEXT_COLOR)
+            axes0.set_facecolor(PLOT_BG_COLOR)
+            axes0.tick_params(colors=PLOT_TEXT_COLOR)
+            axes0.xaxis.label.set_color(PLOT_TEXT_COLOR)
+            axes0.yaxis.label.set_color(PLOT_TEXT_COLOR)
             for spine in axes0.spines.values():
-                spine.set_edgecolor(TEXT_COLOR)
+                spine.set_edgecolor(PLOT_TEXT_COLOR)
             canvas0 = FigureCanvasTkAgg(fig0, master=self.frames[0])
             self.figs[0] = [fig0, axes0, canvas0]
             canvas0.get_tk_widget().grid(
@@ -1449,12 +1453,12 @@ class DisGUI():
         self.figs[0][2].get_tk_widget().destroy()
         fig = plt.Figure(figsize=(FIG_W_SINGLE, FIG_H_SINGLE), dpi=FIG_DPI, facecolor=BG_COLOR)
         axes = fig.add_subplot(111)
-        axes.set_facecolor(FRAME_COLOR)
-        axes.tick_params(colors=TEXT_COLOR)
-        axes.xaxis.label.set_color(TEXT_COLOR)
-        axes.yaxis.label.set_color(TEXT_COLOR)
+        axes.set_facecolor(PLOT_BG_COLOR)
+        axes.tick_params(colors=PLOT_TEXT_COLOR)
+        axes.xaxis.label.set_color(PLOT_TEXT_COLOR)
+        axes.yaxis.label.set_color(PLOT_TEXT_COLOR)
         for spine in axes.spines.values():
-            spine.set_edgecolor(TEXT_COLOR)
+            spine.set_edgecolor(PLOT_TEXT_COLOR)
         canvas = FigureCanvasTkAgg(fig, master=self.frames[0])
         self.figs[0] = [fig, axes, canvas]
         canvas.get_tk_widget().grid(
