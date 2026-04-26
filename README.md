@@ -40,10 +40,8 @@ de données en temps réel via UART.
 
 ## Architecture globale
 
-```
-![Architecture système](docs/screenshots/Architecture_System.png)
 
-```
+![Architecture système](docs/screenshots/Architecture_System.png)
 
 ---
 
