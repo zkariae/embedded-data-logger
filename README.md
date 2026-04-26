@@ -233,6 +233,17 @@ Après login réussi, cliquez sur **Serial** pour ouvrir l'interface de communic
 | **+** | Ajoute un canal sur le graphique |
 | **-** | Supprime un canal du graphique |
 
+
+### Aperçu de l'interface — Streaming en temps réel
+
+![Streaming DHT11 + BH1750](docs/screenshots/Streaming_mesures_H_T_L.png)
+
+| Graphique | Canal | Capteur | Mesure |
+|-----------|-------|---------|--------|
+| Display Manager-1 | Ch0 | DHT11 | Humidité (%) |
+| Display Manager-2 | Ch1 | DHT11 | Température (°C) |
+| Display Manager-3 | Ch2 | BH1750 | Luminosité (lux) |
+
 > Maximum **4 graphiques** simultanés
 
 ### 7. Indicateurs LED STM32
