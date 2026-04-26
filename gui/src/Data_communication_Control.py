@@ -81,7 +81,7 @@ class DataMaster:
         # ------------------------------------------------------------------
         self.FunctionMaster = {
             "RowData":        self.plot_raw_data,
-            "VoltageDisplay": self.plot_voltage_data,
+            #"VoltageDisplay": self.plot_voltage_data,
         }
 
         # ------------------------------------------------------------------
