@@ -346,22 +346,30 @@ WAIT_SYNC ──────────────► IDLE ──────�
 
 ---
 
-### Format de la trame de données
+## Canaux de données
+
+| Canal | Capteur | Mesure | Broche | Exemple |
+|-------|---------|--------|--------|---------|
+| `val1` | DHT11 | Humidité | PC0 (1-Wire) | 52 % |
+| `val2` | DHT11 | Température | PC0 (1-Wire) | 21 °C |
+| `val3` | BH1750FVI | Luminosité | PB6/PB7 (I2C) | 97 lux |
+| `val4` | Libre | — | — | 0 |
+
+### Trame UART
+
+```
 #D#val1#val2#val3#val4#val5#\n
+```
 
-| Champ | Description |
-|-------|-------------|
-| `D` | Marqueur de trame de donnees |
-| `val1` | Canal 0 — Voltage |
-| `val2` | Canal 1 — Current |
-| `val3` | Canal 2 — Temperature |
-| `val4` | Canal 3 — Pressure |
-| `val5` | Controle integrite = somme des chiffres decimaux |
+**Exemple :**
+```
+#D#52#21#97#0#7#\n
 
-#### Exemple
-#D#206#157#1282#7677#14#\n
-val5 = len("206") + len("157") + len("1282") + len("7677")
-= 3 + 3 + 4 + 4
-= 14
+val1 = 52   → Humidite 52%
+val2 = 21   → Temperature 21°C
+val3 = 97   → Luminosite 97 lux
+val4 = 0    → libre
+val5 = 7    → integrite (nb chiffres : 2+2+2+1=7)
+```
 
 > Documentation complète : [`docs/protocol.md`](docs/protocol.md)
