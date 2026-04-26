@@ -263,18 +263,21 @@ En cas de deconnexion USB, une popup apparait automatiquement :
 ---
 
 ### 10. Données CSV enregistrées
-
+```
 Les fichiers CSV sont sauvegardés automatiquement dans `gui/logs/`
 avec un nom horodaté :
 gui/logs/
 └── 20260422005625.csv   ← YYYYMMDDHHMMSS.csv
+```
 
 #### Format des données
+```
 timestamp,Voltage,Current,Temperature,Pressure
 0.0,4,1996,1282,3500
 0.0175,6,1994,1282,3500
 0.0319,8,1992,1282,3500
 0.0345,10,1990,1282,3500
+```
 ...
 
 | Colonne | Description | Unité |
