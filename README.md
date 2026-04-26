@@ -3,13 +3,15 @@
 # embedded-data-logger
 
 ![Build](https://gitlab.com/z_benakka193/embedded-data-logger/badges/main/pipeline.svg)
-![Version](https://img.shields.io/badge/version-v2.7.0-green)
+![Version](https://img.shields.io/badge/version-v3.0.0-green)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Python](https://img.shields.io/badge/python-3.10-blue)
 ![STM32](https://img.shields.io/badge/STM32-F407VG-red)
+![DHT11](https://img.shields.io/badge/capteur-DHT11-orange)
+![BH1750](https://img.shields.io/badge/capteur-BH1750-yellow)
 
 Système embarqué de **collecte, visualisation et stockage cloud**
-de données en temps réel via UART DMA.
+de données en temps réel via UART.
 
 </div>
 
