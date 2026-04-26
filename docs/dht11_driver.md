@@ -9,7 +9,7 @@ Il mesure la température de **0 à 50°C** et l'humidité de **20 à 90% RH**.
 ---
 
 ## Caractéristiques
-
+```
 | Paramètre | Valeur |
 |-----------|--------|
 | Modèle | DHT11 |
@@ -21,17 +21,17 @@ Il mesure la température de **0 à 50°C** et l'humidité de **20 à 90% RH**.
 | Protocole | 1-wire propriétaire |
 | Tension | 3.3V / 5V |
 | Intervalle lecture | minimum 2 secondes |
-
+```
 ---
 
 ## Connexion matérielle
-
+```
 | DHT11 | STM32F407VG | Description |
 |-------|-------------|-------------|
 | VCC | 3.3V | Alimentation |
 | GND | GND | Masse |
 | DATA | PC0 | Données 1-wire |
-
+```
 ### Résistance pull-up
 3.3V ──── 4.7kΩ ──── DATA (PC0)
 
@@ -40,14 +40,15 @@ Il mesure la température de **0 à 50°C** et l'humidité de **20 à 90% RH**.
 ---
 
 ## Configuration GPIO
-
+```
 | Paramètre | Valeur |
 |-----------|--------|
 | Broche | PC0 |
 | Mode output | Push-pull |
 | Mode input | Pull-up interne |
 | Timer | TIM2 (1 MHz — 1 tick = 1 µs) |
-
+```
+```
 ---
 
 ## Architecture du driver
@@ -69,6 +70,7 @@ dht11.h / dht11.c
 └── dht11_get_temperature() — retourne derniere temperature lue
 
 ---
+```
 
 ## Interface publique
 
@@ -104,14 +106,14 @@ Lit la température et l'humidité depuis le DHT11.
 4. Vérification checksum
 
 **Retour :**
-
+```
 | Code | Description |
 |------|-------------|
 | `DHT11_OK` | Lecture réussie |
 | `DHT11_ERR_TIMEOUT` | Timeout — vérifier câblage |
 | `DHT11_ERR_CHECKSUM` | Données corrompues |
 | `DHT11_ERR_PARAM` | Pointeur NULL |
-
+```
 ---
 
 ### `dht11_get_humidity()`
@@ -148,12 +150,14 @@ Bit '0' :  LOW 50µs + HIGH 26µs
 Bit '1' :  LOW 50µs + HIGH 70µs
 Seuil   :  > 50µs = '1', <= 50µs = '0'
 
+```
 ### Trame de données (40 bits)
 ┌──────────┬──────────┬──────────┬──────────┬──────────┐
 │  data[0] │  data[1] │  data[2] │  data[3] │  data[4] │
 │ Hum. int │ Hum. dec │ Tmp. int │ Tmp. dec │ Checksum │
 │  8 bits  │  8 bits  │  8 bits  │  8 bits  │  8 bits  │
 └──────────┴──────────┴──────────┴──────────┴──────────┘
+```
 
 > Sur DHT11 : data[1] et data[3] sont toujours 0 (pas de décimales).
 
@@ -165,20 +169,20 @@ checksum = (data[0] + data[1] + data[2] + data[3]) & 0xFF
 ## Timer TIM2
 
 TIM2 est configuré en compteur libre 32 bits à **1 MHz** :
-
+```
 | Paramètre | Valeur | Calcul |
 |-----------|--------|--------|
 | PCLK1 | 16 MHz (HSI) | - |
 | Prescaler | 15 | 16MHz / (15+1) = 1MHz |
 | ARR | 0xFFFFFFFF | Débordement toutes les ~4295s |
 | Résolution | 1 µs / tick | - |
-
+```
 > TIM2 est initialisé uniquement dans `dht11_init()` — ne pas l'appeler ailleurs.
 
 ---
 
 ## Corrections apportées (v2)
-
+```
 | Fix | Description |
 |-----|-------------|
 | **FIX 1** | `wait_level()` retourne `UINT32_MAX` en cas de timeout (evite faux positifs) |
@@ -186,7 +190,7 @@ TIM2 est configuré en compteur libre 32 bits à **1 MHz** :
 | **FIX 3** | Sequence reponse DHT11 corrigee (LOW puis HIGH) |
 | **FIX 4** | Pull-up interne PC0 active en mode input |
 | **FIX 5** | `tim2_init()` privee — appelee uniquement dans `dht11_init()` |
-
+```
 ---
 
 ## Utilisation dans main.c
@@ -234,18 +238,19 @@ if ((now_ms - last_dht11_ms) >= 2000)
 ---
 
 ## Résultats de test
-
+```
 | Paramètre | Valeur mesurée |
 |-----------|----------------|
 | Température bureau | ~21 °C |
 | Humidité bureau | ~52 % RH |
-
+```
 ---
 
 ## Fichiers
-
+```
 | Fichier | Description |
 |---------|-------------|
 | `firmware/include/dht11.h` | Declarations, registres, interface publique |
 | `firmware/src/dht11.c` | Implementation complete |
 | `docs/dht11_driver.md` | Documentation (ce fichier) |
+```
