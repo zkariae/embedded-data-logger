@@ -294,48 +294,50 @@ timestamp,Voltage,Current,Temperature,Pressure
 ## Protocole de communication UART
 
 ### Paramètres de la liaison série
-
-| Paramètre       | Valeur                  |
-|-----------------|-------------------------|
-| Interface       | USART2 (PA2=TX, PA3=RX) |
-| Baudrate        | 115200                  |
-| Bits de données | 8                       |
-| Parité          | Aucune                  |
-| Bits de stop    | 1                       |
-| Reception       | Non bloquant (polling)  |
-
+```
+| Paramètre | Valeur |
+|-----------|--------|
+| Interface | USART2 (PA2=TX, PA3=RX) |
+| Baudrate | 115200 |
+| Bits de données | 8 |
+| Parité | Aucune |
+| Bits de stop | 1 |
+| Reception | Non bloquant (polling) |
+```
 ---
 
 ### Machine à états STM32
+```
           '?'                    'A'
 WAIT_SYNC ──────────────► IDLE ──────────────► STREAMING
 ▲                       │  ▲                    │
 │          'P'          │  │       'S'          │
 └───────────────────────┘  └────────────────────┘
 'P'
-
+```
+```
 | Etat | LED | Description |
 |------|-----|-------------|
 | `WAIT_SYNC` | Orange | Attente de la commande de synchronisation |
 | `IDLE` | Bleue | Connecte, stream arrete |
 | `STREAMING` | Verte | Envoi periodique des donnees |
 | `default` | Rouge | Erreur / etat inconnu |
-
+```
 ---
 
 ### Commandes PC → STM32
-
+```
 | Commande | Trame | Description |
 |----------|-------|-------------|
 | Sync | `#?#\n` | Demande de synchronisation |
 | Start | `#A#\n` | Demarrage du flux de donnees |
 | Stop | `#S#\n` | Arret du flux de donnees |
 | Disconnect | `#P#\n` | Deconnexion |
-
+```
 ---
 
 ### Reponses STM32 → PC
-
+```
 | Situation | Trame | Description |
 |-----------|-------|-------------|
 | Sync OK | `#!#4#\r\n` | Sync reussie — 4 canaux actifs |
@@ -343,18 +345,18 @@ WAIT_SYNC ──────────────► IDLE ──────�
 | Stop OK | `#STOP#\r\n` | Stream arrete |
 | Disconnect | `#DISCONNECTED#\r\n` | Deconnexion confirmee |
 | Erreur | `#E#OVF#\n` | Depassement buffer TX |
-
+```
 ---
 
 ## Canaux de données
-
+```
 | Canal | Capteur | Mesure | Broche | Exemple |
 |-------|---------|--------|--------|---------|
 | `val1` | DHT11 | Humidité | PC0 (1-Wire) | 52 % |
 | `val2` | DHT11 | Température | PC0 (1-Wire) | 21 °C |
 | `val3` | BH1750FVI | Luminosité | PB6/PB7 (I2C) | 97 lux |
 | `val4` | Libre | — | — | 0 |
-
+```
 ### Trame UART
 
 ```
