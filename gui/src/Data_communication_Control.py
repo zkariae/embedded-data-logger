@@ -99,9 +99,9 @@ class DataMaster:
         }
 
         self.ChannelName = {
-            "Ch0": "Voltage",     "Ch1": "Current",     "Ch2": "Temperature",
-            "Ch3": "Pressure",    "Ch4": "Speed",        "Ch5": "Light",
-            "Ch6": "Energy",      "Ch7": "Force",
+            "Ch0": "Humidity",      "Ch1": "Temperature",  "Ch2": "Luminosity",
+            "Ch3": "Channel_4",     "Ch4": "Channel_5",    "Ch5": "Channel_6",
+            "Ch6": "Channel_7",     "Ch7": "Channel_8",
         }
 
     # ------------------------------------------------------------------
