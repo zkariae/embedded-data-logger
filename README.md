@@ -41,33 +41,9 @@ de données en temps réel via UART.
 ## Architecture globale
 
 ```
-┌─────────────────────┐        UART 115200 baud       ┌──────────────────────┐
-│  STM32F407VG-Disco  │ ────────────────────────────► │      PC Linux        │
-│                     │    #D#v1#v2#v3#v4#v5#\n       │   Python GUI Tkinter │
-│  - GPIO LEDs        │                               │                      │
-│  - UART USART2      │                               │  ┌────────────────┐  │
-│  - SysTick          │                               │  │ Affichage      │  │
-│  - IWDG Watchdog    │                               │  │ temps reel     │  │
-└─────────────────────┘                               │  ├────────────────┤  │
-                                                      │  │ Sauvegarde CSV │  │
-       firmware/                                      │  ├────────────────┤  │
-                                                      │  │ Envoi InfluxDB │  │
-                                                      │  └────────────────┘  │
-                                                      └──────────┬───────────┘
-                                                                 │
-                                                                 ▼
-                                                      ┌──────────────────────┐
-                                                      │  InfluxDB            │
-                                                      │  (time-series DB)    │
-                                                      └──────────┬───────────┘
-                                                                 │
-                                                                 ▼
-                                                      ┌──────────────────────┐
-                                                      │  Grafana Dashboard   │
-                                                      │  localhost:3000      │
-                                                      └──────────────────────┘
-```
+![Architecture système](docs/screenshots/Architecture_System.png)
 
+```
 
 ---
 
