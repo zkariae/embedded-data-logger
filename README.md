@@ -23,11 +23,20 @@ de données en temps réel via UART.
 **embedded-data-logger** est un système embarqué complet permettant de :
 
 - Collecter des données depuis une carte **STM32F407VG-Discovery** via **UART**
+- Mesurer la **température** et l'**humidité** via le capteur **DHT11**
+- Mesurer l'**intensité lumineuse** via le capteur **BH1750FVI**
 - Visualiser les données en **temps réel** via une interface graphique Python
 - Sauvegarder les données localement en **CSV**
 - Stocker et visualiser les données dans le **cloud** via InfluxDB + Grafana
 
 ---
+
+## Capteurs intégrés
+
+| Capteur | Mesure | Broche | Protocole |
+|---------|--------|--------|-----------|
+| **DHT11** | Température + Humidité | PC0 | 1-Wire |
+| **BH1750FVI** | Luminosité (lux) | PB6/PB7 | I2C |
 
 ## Architecture globale
 
