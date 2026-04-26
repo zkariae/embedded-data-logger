@@ -10,6 +10,10 @@
  *
  * Protocole de communication :
  *   PC -> STM32 : '#?#'  -> reponse '#!#4#'          (sync, 4 canaux)
+ *   Canal 0 : Humidite    (DHT11)
+ *   Canal 1 : Temperature (DHT11)
+ *   Canal 2 : Luminosite  (BH1750)
+ *   Canal 3 : libre
  *   PC -> STM32 : '#A#'  -> debut du stream
  *   PC -> STM32 : '#S#'  -> arret du stream
  *   PC -> STM32 : '#P#'  -> deconnexion
@@ -34,7 +38,7 @@
 #include "log.h"
 #include "iwdg.h"
 #include "dht11.h"
-
+#include "bh1750.h"
 /* ------------------------------------------------------------------
  * Constantes
  * ------------------------------------------------------------------ */
@@ -69,10 +73,10 @@ static char          last_cmd      = 'S';
 static char          tx_buffer[TX_BUFFER_SIZE];
 
 /* Valeurs fixes des canaux de donnees */
-static int val1 = 0;    /* Canal 0 : valeur fixe */
-static int val2 = 0;    /* Canal 1 : valeur fixe */
-static int val3 = 0;   /* Canal 2 : valeur fixe */
-static int val4 = 0;   /* Canal 3 : valeur fixe */
+static int val1 = 0;   /* Canal 0 : Humidite (DHT11) */
+static int val2 = 0;   /* Canal 1 : Temperature (DHT11) */
+static int val3 = 0;   /* Canal 2 : luminosite BH1750 (lux) */ 
+static int val4 = 0;   /* Canal 3 : libre */
 static int val5 = 0;      /* Longueur totale des chiffres ASCII (integrite) */
 
 /* ------------------------------------------------------------------
@@ -291,43 +295,39 @@ static void handle_uart_command(char cmd)
  */
 static void send_data_frame(void)
 {
-    DHT11_Status_t ret = dht11_read(&dht11);
-    switch (ret)
+    static uint32_t dht11_counter = 0;
+
+    /* Lire BH1750 — luminosite en lux */
+    val3 = (int)bh1750_read_lux();
+
+    /* Lire DHT11 toutes les 200 iterations (min 2s entre lectures) */
+    if (dht11_counter == 0)
     {
-        case DHT11_OK:
-            val1 = (int)dht11_get_humidity(&dht11);
-            val2 = (int)dht11_get_temperature(&dht11);
-            LOG_INFO("DHT11 lecture OK");
-            break;
-
-        case DHT11_ERR_TIMEOUT:
-            LOG_ERROR("DHT11 : timeout — verifier le cablage PA1");
-            break;
-
-        case DHT11_ERR_CHECKSUM:
-            LOG_ERROR("DHT11 : checksum invalide — donnees corrompues");
-            break;
-
-        case DHT11_ERR_PARAM:
-            LOG_ERROR("DHT11 : parametre invalide — pointeur NULL");
-            break;
-
-        default:
-            LOG_ERROR("DHT11 : erreur inconnue");
-            break;
+        DHT11_Status_t ret = dht11_read(&dht11);
+        switch (ret)
+        {
+            case DHT11_OK:
+                val1 = (int)dht11_get_humidity(&dht11);
+                val2 = (int)dht11_get_temperature(&dht11);
+                break;
+            case DHT11_ERR_TIMEOUT:
+                LOG_ERROR("DHT11 : timeout");
+                break;
+            default:
+                break;
+        }
     }
+    dht11_counter = (dht11_counter + 1) % 200;
 
-    /* Calcul de val5 : integrite de la trame */
+    /* Calcul val5 : integrite de la trame */
     val5 = count_digits((unsigned long)val1)
          + count_digits((unsigned long)val2)
          + count_digits((unsigned long)val3)
          + count_digits((unsigned long)val4);
 
-    /* Construction et envoi de la trame */
     if (build_frame() == 0)
     {
         uart_send_string("#E#OVF#\n");
-        LOG_INFO("Erreur : trame trop longue");
         return;
     }
 
@@ -344,42 +344,36 @@ int main(void)
 {
     char rx_char = 0;
 
-    /* Initialisation des peripheriques */
     gpio_init();
     systick_init();
     uart_init(UART_BAUD_115200);
-    /* Initialisaion de capteur dht11 */
+
     dht11_init();
-    /* Initialisation du watchdog — timeout 2 secondes */
-    //iwdg_init(2000);
+    bh1750_init();
+    iwdg_init(2000);
 
     LOG_INFO("=== embedded-data-logger ===");
     LOG_INFO("En attente de synchronisation...");
 
-    /* Etat initial : WAIT_SYNC -> LED orange */
     update_leds(current_state);
 
     while (1)
     {
-
-        /* --- Reception UART --- */
         rx_char = uart_receive_char();
 
         if (rx_char != 0 || last_cmd == 'A')
         {
             if (rx_char != 0)
                 last_cmd = rx_char;
-
             handle_uart_command(last_cmd);
             update_leds(current_state);
         }
 
-        /* --- Actions selon l'etat courant --- */
         switch (current_state)
         {
             case STREAMING:
                 send_data_frame();
-                delay_ms(10);
+                delay_ms(200);
                 break;
 
             case IDLE:
@@ -387,7 +381,7 @@ int main(void)
             default:
                 break;
         }
-        /* Rafraichir le watchdog — empeche le reset */
+
         iwdg_refresh();
     }
 }
