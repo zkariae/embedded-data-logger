@@ -102,11 +102,15 @@ embedded-data-logger/
 ## Prérequis
 
 ### Matériel
+
 | Composant | Description |
 |-----------|-------------|
-| STM32F407VG-Discovery | Carte de développement |
-| Câble USB | Connexion ST-Link + UART |
-| PC Linux / WSL | Ubuntu 22.04 recommandé |
+| `STM32F407VG-Discovery` | Carte de développement |
+| `Câble USB` | Connexion ST-Link + UART |
+| `Adaptateur USB-UART` | CP2102 / CH340 / FTDI |
+| `DHT11` | Capteur température + humidité |
+| `BH1750FVI` | Capteur luminosité (I2C) |
+| `PC Linux` / WSL | Ubuntu 22.04 recommandé |
 
 ### Logiciels
 | Outil | Installation |
