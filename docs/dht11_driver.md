@@ -139,11 +139,16 @@ Retourne la dernière température lue en °C.
 ## Protocole 1-wire DHT11
 
 ### Signal START
-MCU         _______________                    ________
-__| 18ms LOW      | 40µs HIGH _____|
-DHT11                       ___________________
-| 80µs LOW          |
-80µs HIGH
+
+```
+MCU   ─────────────────┐                ┌────────────
+                       │   18ms LOW     │  40µs HIGH
+                       └────────────────┘
+
+DHT11                                       ┌──────────────────┐
+                                            │    80µs LOW      │    80µs HIGH
+                                            └──────────────────┘
+```
 
 ### Format des bits
 Bit '0' :  LOW 50µs + HIGH 26µs
