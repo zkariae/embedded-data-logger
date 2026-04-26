@@ -950,28 +950,49 @@ class ConnGUI():
                 # Effacement du subplot avant redessin
                 self.chart_master.figs[chart_idx][1].clear()
 
+                # Restaurer le fond apres clear()
+                self.chart_master.figs[chart_idx][1].set_facecolor(PLOT_BG_COLOR)
+                self.chart_master.figs[chart_idx][1].tick_params(
+                    colors=PLOT_TEXT_COLOR, labelcolor=PLOT_TEXT_COLOR)
+                self.chart_master.figs[chart_idx][1].xaxis.label.set_color(PLOT_TEXT_COLOR)
+                self.chart_master.figs[chart_idx][1].yaxis.label.set_color(PLOT_TEXT_COLOR)
+                for spine in self.chart_master.figs[chart_idx][1].spines.values():
+                    spine.set_edgecolor(PLOT_TEXT_COLOR)
+
                 for ch_cnt, state in enumerate(self.chart_master.view_vars[chart_idx]):
                     if not state.get():
                         continue
 
-                    # Récupération du canal et de la fonction sélectionnés
+                    # Recuperation du canal et de la fonction selectionnes
                     channel   = self.chart_master.option_vars[chart_idx][ch_cnt].get()
                     func_name = self.chart_master.fun_vars[chart_idx][ch_cnt].get()
                     ch_index  = self.data.ChannelNum[channel]
 
-                    # Préparation des données pour le tracé
-                    self.chart = self.chart_master.figs[chart_idx][1]  # Axes Matplotlib
-                    self.color = self.data.ChannelColor[channel]        # Couleur du canal
-                    self.y     = self.data.YDisplay[ch_index]           # Données Y (capteur)
-                    self.x     = self.data.XDisplay                     # Données X (temps)
+                    # Preparation des donnees pour le trace
+                    self.chart = self.chart_master.figs[chart_idx][1]
+                    self.color = self.data.ChannelColor[channel]
+                    self.y     = self.data.YDisplay[ch_index]
+                    self.x     = self.data.XDisplay
+                    self.label = self.data.ChannelName[channel]  # ← Ajouter
 
-                    # Appel de la fonction d'affichage sélectionnée (raw ou tension)
-                    # Exemple : self.data.FunctionMaster["RowData"](self)
+                    # Appel de la fonction d'affichage selectionnee
                     self.data.FunctionMaster[func_name](self)
 
-                # Affichage de la grille et redessein du canvas
-                    self.chart_master.figs[chart_idx][1].grid(
-                        color=PLOT_GRID_COLOR, linestyle="--", linewidth=0.3)
+                # Affichage de la grille
+                self.chart_master.figs[chart_idx][1].grid(
+                    color=PLOT_GRID_COLOR, linestyle="--", linewidth=0.3)
+
+                # Afficher la legende
+                handles, labels = self.chart_master.figs[chart_idx][1].get_legend_handles_labels()
+                if handles:
+                    self.chart_master.figs[chart_idx][1].legend(
+                        loc="upper left",
+                        fontsize=8,
+                        facecolor=PLOT_BG_COLOR,
+                        labelcolor="#333333"
+                    )
+
+                # Redessiner le canvas
                 self.chart_master.figs[chart_idx][0].canvas.draw()
 
         except Exception as e:

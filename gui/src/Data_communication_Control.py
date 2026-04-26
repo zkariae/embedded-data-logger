@@ -316,16 +316,15 @@ class DataMaster:
     def plot_raw_data(self, gui):
         """
         Trace les données brutes (valeurs ADC) sur le graphe.
-
-        Args:
-            gui: Objet exposant gui.chart, gui.x, gui.y, gui.color.
         """
         gui.chart.plot(
             gui.x, gui.y,
             color=gui.color,
             dash_capstyle="projecting",
-            linewidth=1
+            linewidth=1,
+            label=gui.label
         )
+
 
     def plot_voltage_data(self, gui):
         """
