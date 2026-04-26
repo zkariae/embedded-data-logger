@@ -57,6 +57,8 @@ embedded-data-logger/
 │   │   ├── gpio.c                     # Driver GPIO LEDs
 │   │   ├── systick.c                  # Timer SysTick + delay_ms()
 │   │   ├── iwdg.c                     # Driver Watchdog IWDG
+│   │   ├── dht11.c                    # Driver capteur DHT11 (1-Wire)
+│   │   ├── bh1750.c                   # Driver capteur BH1750 (I2C)
 │   │   └── system_stm32f4xx.c         # SystemInit (FPU + VTOR)
 │   ├── include/                       # Fichiers d'en-tete (.h)
 │   ├── startup/
@@ -79,13 +81,16 @@ embedded-data-logger/
 │   │   └── users.json.example         # Template utilisateurs
 │   ├── logs/                          # Fichiers CSV + logs (ignores par Git)
 │   ├── tests/                         # Tests unitaires
-│   └── requirements.txt              # Dependances Python
+│   └── requirements.txt               # Dependances Python
 │
 ├── docker/
 │   └── docker-compose.yml             # Stack InfluxDB + Grafana
 │
 ├── docs/
-│   └── protocol.md                    # Documentation protocole UART
+│   ├── Architecture_System.png        # Schema architecture systeme
+│   ├── protocol.md                    # Documentation protocole UART
+│   ├── dht11_driver.md                # Documentation driver DHT11
+│   └── bh1750_driver.md               # Documentation driver BH1750
 │
 ├── .gitlab-ci.yml                     # Pipeline CI/CD
 └── README.md
