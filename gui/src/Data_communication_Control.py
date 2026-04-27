@@ -93,8 +93,8 @@ class DataMaster:
         }
 
         self.ChannelColor = {
-            "Ch0": "blue",    "Ch1": "yellow",   "Ch2": "red",
-            "Ch3": "cyan",    "Ch4": "magenta",  "Ch5": "green",
+            "Ch0": "blue",    "Ch1": "green",   "Ch2": "red",
+            "Ch3": "cyan",    "Ch4": "magenta",  "Ch5": "yellow",
             "Ch6": "black",   "Ch7": "white",
         }
 
@@ -321,7 +321,7 @@ class DataMaster:
             gui.x, gui.y,
             color=gui.color,
             dash_capstyle="projecting",
-            linewidth=1,
+            linewidth=2,
             label=gui.label
         )
 

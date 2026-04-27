@@ -987,7 +987,7 @@ class ConnGUI():
                 if handles:
                     self.chart_master.figs[chart_idx][1].legend(
                         loc="upper left",
-                        fontsize=8,
+                        fontsize=10,
                         facecolor=PLOT_BG_COLOR,
                         labelcolor="#333333"
                     )
@@ -1501,8 +1501,8 @@ class DisGUI():
         """
         try:
             ax = self.figs[frame_index][1]
-            ax.set_xlabel("Temps (s)", fontsize=12)
-            ax.set_ylabel(self.data.ChannelName[channel], fontsize=12)
+            ax.set_xlabel("Temps (s)", fontsize=14)
+            ax.set_ylabel(self.data.ChannelName[channel], fontsize=14)
             handles, labels = ax.get_legend_handles_labels()
             if handles:
                 ax.legend()
