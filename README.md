@@ -257,16 +257,7 @@ Après login réussi, cliquez sur **Serial** pour ouvrir l'interface de communic
 | Verte | STREAMING | Envoi des donnees actif |
 | Rouge | default | Erreur / etat inconnu |
 
-### 8. Dashboard Grafana
-
-![Grafana](docs/screenshots/Grafana.png)
-
-Ouvrez `http://localhost:3000` dans votre navigateur :
-- Login : `admin` / `admin1234`
-- Dashboard : **Embedded Data Logger**
-- Les 4 canaux sont visibles en temps reel
-
-### 9. Reconnexion automatique
+### 8. Reconnexion automatique
 
 En cas de deconnexion USB, une popup apparait automatiquement :
 - Cliquez **Yes** pour tenter la reconnexion (5 tentatives, 2s de delai)
@@ -277,7 +268,7 @@ En cas de deconnexion USB, une popup apparait automatiquement :
 
 ---
 
-### 10. Données CSV enregistrées
+### 9. Données CSV enregistrées
 ```
 Les fichiers CSV sont sauvegardés automatiquement dans `gui/logs/`
 avec un nom horodaté :
@@ -308,6 +299,20 @@ timestamp,Voltage,Current,Temperature,Pressure
 
 ---
 
+
+### 10. Dashboard Grafana
+
+![Grafana Dashboard](docs/screenshots/Grafana_Capture2.png)
+
+Accédez au dashboard via `http://localhost:3000` :
+
+| Panel | Capteur | Couleur | Valeur exemple |
+|-------|---------|---------|----------------|
+| Luminosité (lux) | BH1750 | Bleu | 0 — 1500 lux |
+| Température (°C) | DHT11 | Orange | ~20 °C |
+| Humidité (%) | DHT11 | Vert | 58 — 64 % |
+
+> Documentation complète : [`docs/influxdb_grafana.md`](docs/influxdb_grafana.md)
 
 ## Protocole de communication UART
 
