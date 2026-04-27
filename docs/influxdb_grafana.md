@@ -152,3 +152,83 @@ Token          : my-super-secret-token
 Default Bucket : sensors
 
 4. Cliquez **Save & Test** → `datasource is working. 3 buckets found`
+
+## Client Python — influx_client.py
+
+### Description
+
+Le module `influx_client.py` est responsable de l'envoi des données
+capteurs vers InfluxDB via l'API HTTP officielle.
+
+### Installation
+
+```bash
+pip3 install influxdb-client
+```
+
+### Classe InfluxClient
+
+```python
+from influx_client import InfluxClient
+
+# Instanciation
+client = InfluxClient()
+
+# Envoi des données
+client.send_data(
+    channel_names=["Humidity", "Temperature", "Luminosity"],
+    values=[52, 21, 97],
+    timestamp=datetime.now(timezone.utc)
+)
+
+# Fermeture
+client.close()
+```
+
+### Méthodes
+
+| Méthode | Description |
+|---------|-------------|
+| `__init__()` | Connexion InfluxDB |
+| `send_data()` | Envoi des mesures capteurs |
+| `close()` | Fermeture de la connexion |
+
+### Paramètres de `send_data()`
+
+| Paramètre | Type | Description | Exemple |
+|-----------|------|-------------|---------|
+| `channel_names` | list | Noms des canaux | `["Humidity", "Temperature", "Luminosity"]` |
+| `values` | list | Valeurs mesurées | `[52, 21, 97]` |
+| `timestamp` | datetime | Horodatage UTC | `datetime.now(timezone.utc)` |
+
+### Intégration dans save_data()
+
+Les données sont envoyées vers InfluxDB automatiquement
+lorsque **Save data** est coché dans l'interface :
+
+```python
+# Dans Data_communication_Control.py
+def save_data(self, gui):
+    if not gui.save:
+        return
+
+    # Sauvegarde CSV
+    with open(self.filename, "a", newline="") as csv_file:
+        ...
+
+    # Envoi vers InfluxDB
+    channel_names = [self.ChannelName[ch] for ch in self.Channels]
+    self.influx.send_data(
+        channel_names=channel_names,
+        values=self.int_msg,
+        timestamp=datetime.now(timezone.utc)
+    )
+```
+
+### Format des données dans InfluxDB
+measurement : sensors
+fields      : Humidity, Temperature, Luminosity, Channel_4
+timestamp   : 2026-04-21T17:25:40.000Z
+
+### Exemple de point InfluxDB
+sensors Humidity=52,Temperature=21,Luminosity=97,Channel_4=0 1713718740000000000
