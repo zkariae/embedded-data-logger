@@ -93,8 +93,8 @@ class DataMaster:
         }
 
         self.ChannelColor = {
-            "Ch0": "blue",    "Ch1": "green",   "Ch2": "red",
-            "Ch3": "cyan",    "Ch4": "magenta",  "Ch5": "yellow",
+            "Ch0": "blue",    "Ch1": "yellow",   "Ch2": "red",
+            "Ch3": "cyan",    "Ch4": "magenta",  "Ch5": "green",
             "Ch6": "black",   "Ch7": "white",
         }
 
