@@ -321,3 +321,78 @@ from(bucket: "sensors")
   |> filter(fn: (r) => r._measurement == "sensors")
   |> last()
 ```
+
+## Dashboard Grafana
+
+### Création du dashboard
+
+1. **Home → Dashboards → New Dashboard**
+2. Cliquez **Add visualization**
+3. Sélectionnez la source **InfluxDB**
+
+### Configuration du panel
+
+#### Requête pour tous les capteurs
+
+```flux
+from(bucket: "sensors")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r._measurement == "sensors")
+```
+
+#### Paramètres du panel
+
+| Paramètre | Valeur |
+|-----------|--------|
+| Title | Embedded Data Logger |
+| Type | Time series |
+| Interval | Auto (200ms) |
+
+### Configuration des couleurs
+
+| Canal | Couleur |
+|-------|---------|
+| Humidity | Bleu |
+| Temperature | Rouge |
+| Luminosity | Jaune |
+| Channel_4 | Cyan |
+
+### Panels recommandés
+
+| Panel | Type | Requête | Description |
+|-------|------|---------|-------------|
+| Humidité | Time series | `_field == "Humidity"` | Courbe humidité % |
+| Température | Time series | `_field == "Temperature"` | Courbe température °C |
+| Luminosité | Time series | `_field == "Luminosity"` | Courbe luminosité lux |
+| Dernière humidité | Stat | `_field == "Humidity" \|> last()` | Valeur actuelle |
+| Dernière température | Stat | `_field == "Temperature" \|> last()` | Valeur actuelle |
+| Dernière luminosité | Stat | `_field == "Luminosity" \|> last()` | Valeur actuelle |
+
+### Paramètres de rafraîchissement
+
+| Paramètre | Valeur recommandée |
+|-----------|-------------------|
+| Auto-refresh | 5s |
+| Time range | Last 1 hour |
+| Timezone | Browser |
+
+### Sauvegarde du dashboard
+
+1. Cliquez **Save dashboard** en haut à droite
+2. Nom : `Embedded Data Logger`
+3. Cliquez **Save**
+
+### Volumes persistants
+
+Les dashboards Grafana sont sauvegardés dans le volume Docker :
+
+```bash
+# Lister les volumes
+sudo docker volume ls
+
+# Attendu :
+# embedded-data-logger_grafana-data
+# embedded-data-logger_influxdb-data
+```
+
+> Les données et dashboards survivent même après `docker-compose down`.
