@@ -232,3 +232,92 @@ timestamp   : 2026-04-21T17:25:40.000Z
 
 ### Exemple de point InfluxDB
 sensors Humidity=52,Temperature=21,Luminosity=97,Channel_4=0 1713718740000000000
+
+## Requêtes Flux
+
+### Syntaxe de base
+
+```flux
+from(bucket: "sensors")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r._measurement == "sensors")
+  |> filter(fn: (r) => r._field == "Humidity")
+```
+
+### Requêtes par capteur
+
+#### DHT11 — Humidité
+
+```flux
+from(bucket: "sensors")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r._measurement == "sensors")
+  |> filter(fn: (r) => r._field == "Humidity")
+```
+
+#### DHT11 — Température
+
+```flux
+from(bucket: "sensors")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r._measurement == "sensors")
+  |> filter(fn: (r) => r._field == "Temperature")
+```
+
+#### BH1750 — Luminosité
+
+```flux
+from(bucket: "sensors")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r._measurement == "sensors")
+  |> filter(fn: (r) => r._field == "Luminosity")
+```
+
+#### Tous les capteurs en une seule requête
+
+```flux
+from(bucket: "sensors")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r._measurement == "sensors")
+```
+
+### Requêtes avancées
+
+#### Moyenne sur 5 minutes
+
+```flux
+from(bucket: "sensors")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r._measurement == "sensors")
+  |> filter(fn: (r) => r._field == "Temperature")
+  |> aggregateWindow(every: 5m, fn: mean)
+```
+
+#### Valeur maximale
+
+```flux
+from(bucket: "sensors")
+  |> range(start: -24h)
+  |> filter(fn: (r) => r._measurement == "sensors")
+  |> filter(fn: (r) => r._field == "Humidity")
+  |> max()
+```
+
+#### Valeur minimale
+
+```flux
+from(bucket: "sensors")
+  |> range(start: -24h)
+  |> filter(fn: (r) => r._measurement == "sensors")
+  |> filter(fn: (r) => r._field == "Temperature")
+  |> min()
+```
+
+#### Dernière valeur reçue
+
+```flux
+from(bucket: "sensors")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r._measurement == "sensors")
+  |> last()
+```
