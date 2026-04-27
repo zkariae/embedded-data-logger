@@ -399,7 +399,7 @@ sudo docker volume ls
 
 ### Grafana — Dashboard 3 panels séparés
 
-![Grafana Dashboard](docs/screenshots/Grafana_Capture2.png)
+![Grafana Dashboard](screenshots/Grafana_Capture2.png)
 
 | Panel | Capteur | Couleur | Valeur exemple |
 |-------|---------|---------|----------------|
