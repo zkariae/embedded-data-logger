@@ -236,7 +236,7 @@ Après login réussi, cliquez sur **Serial** pour ouvrir l'interface de communic
 
 ### Aperçu de l'interface — Streaming en temps réel
 
-![Streaming DHT11 + BH1750](docs/screenshots/Streaming_mesures_H_T_L.png)
+![Streaming DHT11 + BH1750](docs/screenshots/Mesures_T_L_H.png)
 
 | Graphique | Canal | Capteur | Mesure |
 |-----------|-------|---------|--------|
