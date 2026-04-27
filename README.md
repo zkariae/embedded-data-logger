@@ -269,30 +269,33 @@ En cas de deconnexion USB, une popup apparait automatiquement :
 ---
 
 ### 9. Données CSV enregistrées
-```
+
 Les fichiers CSV sont sauvegardés automatiquement dans `gui/logs/`
 avec un nom horodaté :
+
+```
 gui/logs/
 └── 20260422005625.csv   ← YYYYMMDDHHMMSS.csv
 ```
 
 #### Format des données
+
 ```
-timestamp,Voltage,Current,Temperature,Pressure
-0.0,4,1996,1282,3500
-0.0175,6,1994,1282,3500
-0.0319,8,1992,1282,3500
-0.0345,10,1990,1282,3500
-```
+timestamp,Humidity,Temperature,Luminosity,Channel_4
+0.0,52,21,97,0
+0.38,52,21,95,0
+0.76,52,21,97,0
+1.14,52,21,96,0
 ...
+```
 
 | Colonne | Description | Unité |
 |---------|-------------|-------|
 | `timestamp` | Temps relatif depuis le debut du stream | secondes |
-| `Voltage` | Canal 0 — increment 0 → 2000 | valeur ADC |
-| `Current` | Canal 1 — decrement 2000 → 0 | valeur ADC |
-| `Temperature` | Canal 2 — valeur fixe 1282 | valeur ADC |
-| `Pressure` | Canal 3 — valeur fixe 3500 | valeur ADC |
+| `Humidity` | Canal 0 — DHT11 humidite | % |
+| `Temperature` | Canal 1 — DHT11 temperature | °C |
+| `Luminosity` | Canal 2 — BH1750 luminosite | lux |
+| `Channel_4` | Canal 3 — libre | — |
 
 > Le dossier `gui/logs/` est ignore par Git (`.gitignore`).
 
