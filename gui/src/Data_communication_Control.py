@@ -81,7 +81,7 @@ class DataMaster:
         # ------------------------------------------------------------------
         self.FunctionMaster = {
             "RowData":        self.plot_raw_data,
-            "VoltageDisplay": self.plot_voltage_data,
+            #"VoltageDisplay": self.plot_voltage_data,
         }
 
         # ------------------------------------------------------------------
@@ -99,9 +99,9 @@ class DataMaster:
         }
 
         self.ChannelName = {
-            "Ch0": "Voltage",     "Ch1": "Current",     "Ch2": "Temperature",
-            "Ch3": "Pressure",    "Ch4": "Speed",        "Ch5": "Light",
-            "Ch6": "Energy",      "Ch7": "Force",
+            "Ch0": "Humidity",      "Ch1": "Temperature",  "Ch2": "Luminosity",
+            "Ch3": "Channel_4",     "Ch4": "Channel_5",    "Ch5": "Channel_6",
+            "Ch6": "Channel_7",     "Ch7": "Channel_8",
         }
 
     # ------------------------------------------------------------------
@@ -316,16 +316,15 @@ class DataMaster:
     def plot_raw_data(self, gui):
         """
         Trace les données brutes (valeurs ADC) sur le graphe.
-
-        Args:
-            gui: Objet exposant gui.chart, gui.x, gui.y, gui.color.
         """
         gui.chart.plot(
             gui.x, gui.y,
             color=gui.color,
             dash_capstyle="projecting",
-            linewidth=1
+            linewidth=2,
+            label=gui.label
         )
+
 
     def plot_voltage_data(self, gui):
         """
