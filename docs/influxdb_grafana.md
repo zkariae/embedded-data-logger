@@ -88,3 +88,67 @@ sudo docker logs embedded-grafana
 # Redémarrer les conteneurs
 sudo docker-compose restart
 ```
+
+## Configuration
+
+### docker-compose.yml
+
+```yaml
+services:
+
+  influxdb:
+    image: influxdb:2.7
+    container_name: embedded-influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=admin1234
+      - DOCKER_INFLUXDB_INIT_ORG=embedded-data-logger
+      - DOCKER_INFLUXDB_INIT_BUCKET=sensors
+      - DOCKER_INFLUXDB_INIT_RETENTION=30d
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=my-super-secret-token
+
+  grafana:
+    image: grafana/grafana:10.0.0
+    container_name: embedded-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin1234
+    depends_on:
+      - influxdb
+```
+
+### Paramètres InfluxDB
+
+| Paramètre | Valeur | Description |
+|-----------|--------|-------------|
+| `URL` | http://localhost:8086 | Adresse du serveur |
+| `Organisation` | embedded-data-logger | Namespace du projet |
+| `Bucket` | sensors | Conteneur des données |
+| `Token` | my-super-secret-token | Authentification API |
+| `Retention` | 30 jours | Durée de conservation |
+
+### Paramètres Grafana
+
+| Paramètre | Valeur |
+|-----------|--------|
+| `URL` | http://localhost:3000 |
+| `Admin` | admin / admin1234 |
+| `Data source` | InfluxDB (Flux) |
+
+### Configuration data source Grafana
+
+1. **Connections → Data Sources → Add data source**
+2. Choisissez **InfluxDB**
+3. Configurez :
+Query Language : Flux
+URL            : http://influxdb:8086
+Organization   : embedded-data-logger
+Token          : my-super-secret-token
+Default Bucket : sensors
+
+4. Cliquez **Save & Test** → `datasource is working. 3 buckets found`
