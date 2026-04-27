@@ -396,3 +396,13 @@ sudo docker volume ls
 ```
 
 > Les données et dashboards survivent même après `docker-compose down`.
+
+### Grafana — Dashboard 3 panels séparés
+
+![Grafana Dashboard](docs/screenshots/Grafana_Capture2.png)
+
+| Panel | Capteur | Couleur | Valeur exemple |
+|-------|---------|---------|----------------|
+| Luminosité (lux) | BH1750 | Bleu | 0 — 1500 lux |
+| Température (°C) | DHT11 | Orange | ~20 °C |
+| Humidité (%) | DHT11 | Vert | 58 — 64 % |
