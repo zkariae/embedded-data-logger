@@ -1,15 +1,17 @@
 <div align="center">
 
-# embedded-data-logger
+# Embedded Data Logger
 
 ![Build](https://gitlab.com/z_benakka193/embedded-data-logger/badges/main/pipeline.svg)
-![Version](https://img.shields.io/badge/version-v2.7.0-green)
+![Version](https://img.shields.io/badge/version-v3.0.0-green)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Python](https://img.shields.io/badge/python-3.10-blue)
 ![STM32](https://img.shields.io/badge/STM32-F407VG-red)
+![DHT11](https://img.shields.io/badge/capteur-DHT11-orange)
+![BH1750](https://img.shields.io/badge/capteur-BH1750-yellow)
 
 Système embarqué de **collecte, visualisation et stockage cloud**
-de données en temps réel via UART DMA.
+de données en temps réel via UART.
 
 </div>
 
@@ -21,42 +23,25 @@ de données en temps réel via UART DMA.
 **embedded-data-logger** est un système embarqué complet permettant de :
 
 - Collecter des données depuis une carte **STM32F407VG-Discovery** via **UART**
+- Mesurer la **température** et l'**humidité** via le capteur **DHT11**
+- Mesurer l'**intensité lumineuse** via le capteur **BH1750FVI**
 - Visualiser les données en **temps réel** via une interface graphique Python
 - Sauvegarder les données localement en **CSV**
 - Stocker et visualiser les données dans le **cloud** via InfluxDB + Grafana
 
 ---
 
+## Capteurs intégrés
+
+| Capteur | Mesure | Broche | Protocole |
+|---------|--------|--------|-----------|
+| **DHT11** | Température + Humidité | PC0 | 1-Wire |
+| **BH1750FVI** | Luminosité (lux) | PB6/PB7 | I2C |
+
 ## Architecture globale
 
-```
-┌─────────────────────┐        UART 115200 baud       ┌──────────────────────┐
-│  STM32F407VG-Disco  │ ────────────────────────────► │      PC Linux        │
-│                     │    #D#v1#v2#v3#v4#v5#\n       │   Python GUI Tkinter │
-│  - GPIO LEDs        │                               │                      │
-│  - UART USART2      │                               │  ┌────────────────┐  │
-│  - SysTick          │                               │  │ Affichage      │  │
-│  - IWDG Watchdog    │                               │  │ temps reel     │  │
-└─────────────────────┘                               │  ├────────────────┤  │
-                                                      │  │ Sauvegarde CSV │  │
-       firmware/                                      │  ├────────────────┤  │
-                                                      │  │ Envoi InfluxDB │  │
-                                                      │  └────────────────┘  │
-                                                      └──────────┬───────────┘
-                                                                 │
-                                                                 ▼
-                                                      ┌──────────────────────┐
-                                                      │  InfluxDB            │
-                                                      │  (time-series DB)    │
-                                                      └──────────┬───────────┘
-                                                                 │
-                                                                 ▼
-                                                      ┌──────────────────────┐
-                                                      │  Grafana Dashboard   │
-                                                      │  localhost:3000      │
-                                                      └──────────────────────┘
-```
 
+![Architecture système](docs/screenshots/Architecture_System.png)
 
 ---
 
@@ -72,6 +57,8 @@ embedded-data-logger/
 │   │   ├── gpio.c                     # Driver GPIO LEDs
 │   │   ├── systick.c                  # Timer SysTick + delay_ms()
 │   │   ├── iwdg.c                     # Driver Watchdog IWDG
+│   │   ├── dht11.c                    # Driver capteur DHT11 (1-Wire)
+│   │   ├── bh1750.c                   # Driver capteur BH1750 (I2C)
 │   │   └── system_stm32f4xx.c         # SystemInit (FPU + VTOR)
 │   ├── include/                       # Fichiers d'en-tete (.h)
 │   ├── startup/
@@ -94,13 +81,16 @@ embedded-data-logger/
 │   │   └── users.json.example         # Template utilisateurs
 │   ├── logs/                          # Fichiers CSV + logs (ignores par Git)
 │   ├── tests/                         # Tests unitaires
-│   └── requirements.txt              # Dependances Python
+│   └── requirements.txt               # Dependances Python
 │
 ├── docker/
 │   └── docker-compose.yml             # Stack InfluxDB + Grafana
 │
 ├── docs/
-│   └── protocol.md                    # Documentation protocole UART
+│   ├── Architecture_System.png        # Schema architecture systeme
+│   ├── protocol.md                    # Documentation protocole UART
+│   ├── dht11_driver.md                # Documentation driver DHT11
+│   └── bh1750_driver.md               # Documentation driver BH1750
 │
 ├── .gitlab-ci.yml                     # Pipeline CI/CD
 └── README.md
@@ -112,11 +102,15 @@ embedded-data-logger/
 ## Prérequis
 
 ### Matériel
+
 | Composant | Description |
 |-----------|-------------|
-| STM32F407VG-Discovery | Carte de développement |
-| Câble USB | Connexion ST-Link + UART |
-| PC Linux / WSL | Ubuntu 22.04 recommandé |
+| `STM32F407VG-Discovery` | Carte de développement |
+| `Câble USB` | Connexion ST-Link + UART |
+| `Adaptateur USB-UART` | CP2102 / CH340 / FTDI |
+| `DHT11` | Capteur température + humidité |
+| `BH1750FVI` | Capteur luminosité (I2C) |
+| `PC Linux` / WSL | Ubuntu 22.04 recommandé |
 
 ### Logiciels
 | Outil | Installation |
@@ -142,13 +136,86 @@ cd embedded-data-logger
 
 ```bash
 cd firmware
+```
 
-# Compiler
-make
+#### Compilation
 
-# Flasher la carte
+```bash
+# Mode RELEASE (par défaut)
+make clean && make
+
+# Mode DEBUG
+make clean && make BUILD=debug
+```
+
+#### Résultat attendu
+
+```
+[INFO] Build mode : RELEASE
+[CC]   src/main.c
+[CC]   src/uart.c
+[CC]   src/gpio.c
+[CC]   src/systick.c
+[CC]   src/iwdg.c
+[CC]   src/dht11.c
+[CC]   src/bh1750.c
+[CC]   src/system_stm32f4xx.c
+[AS]   startup/startup_stm32f407.s
+[LD]   build/bin/embedded-data-logger.elf
+[HEX]  build/bin/embedded-data-logger.hex
+   text    data     bss     dec     hex filename
+   6552       4      96    6652    19fc build/bin/embedded-data-logger.elf
+```
+
+#### Flash de la carte
+
+```bash
+# Connecter la carte STM32F407VG-Discovery via ST-Link USB
 make flash
 ```
+
+#### Vérification via minicom
+
+```bash
+# Ouvrir le port série
+minicom -D /dev/ttyUSB0 -b 115200
+```
+
+Résultat attendu :
+
+```
+[INFO] === embedded-data-logger ===
+[INFO] DHT11 : initialise sur PC0 (TIM2 1MHz)
+[INFO] BH1750 : init OK
+[INFO] En attente de synchronisation...
+```
+
+#### Commandes Makefile disponibles
+
+| Commande | Description |
+|----------|-------------|
+| `make` | Compilation RELEASE |
+| `make BUILD=debug` | Compilation DEBUG |
+| `make flash` | Flash via OpenOCD ST-Link |
+| `make clean` | Suppression des fichiers compilés |
+| `make debug-server` | Lancement serveur GDB |
+
+
+---
+
+### Capteurs intégrés dans le firmware
+
+#### DHT11 — Température + Humidité
+- Protocole **1-Wire** sur broche **PC0**
+- Lecture toutes les **2 secondes** via `systick_get_tick()`
+- Driver complet : [`docs/dht11_driver.md`](docs/dht11_driver.md)
+
+#### BH1750FVI — Luminosité
+- Protocole **I2C** sur broches **PB6 (SCL) / PB7 (SDA)**
+- Adresse I2C : `0x23` (ADD = GND)
+- Mode **ONE_TIME_H_RES_MODE** — mesure déclenchée à chaque lecture
+- Driver complet : [`docs/bh1750_driver.md`](docs/bh1750_driver.md)
+
 
 ### 3. Interface graphique Python
 
@@ -239,6 +306,17 @@ Après login réussi, cliquez sur **Serial** pour ouvrir l'interface de communic
 | **+** | Ajoute un canal sur le graphique |
 | **-** | Supprime un canal du graphique |
 
+
+### Aperçu de l'interface — Streaming en temps réel
+
+![Streaming DHT11 + BH1750](docs/screenshots/Mesures_T_L_H.png)
+
+| Graphique | Canal | Capteur | Mesure |
+|-----------|-------|---------|--------|
+| Display Manager-1 | Ch0 | DHT11 | Humidité (%) |
+| Display Manager-2 | Ch1 | DHT11 | Température (°C) |
+| Display Manager-3 | Ch2 | BH1750 | Luminosité (lux) |
+
 > Maximum **4 graphiques** simultanés
 
 ### 7. Indicateurs LED STM32
@@ -252,16 +330,7 @@ Après login réussi, cliquez sur **Serial** pour ouvrir l'interface de communic
 | Verte | STREAMING | Envoi des donnees actif |
 | Rouge | default | Erreur / etat inconnu |
 
-### 8. Dashboard Grafana
-
-![Grafana](docs/screenshots/Grafana.png)
-
-Ouvrez `http://localhost:3000` dans votre navigateur :
-- Login : `admin` / `admin1234`
-- Dashboard : **Embedded Data Logger**
-- Les 4 canaux sont visibles en temps reel
-
-### 9. Reconnexion automatique
+### 8. Reconnexion automatique
 
 En cas de deconnexion USB, une popup apparait automatiquement :
 - Cliquez **Yes** pour tenter la reconnexion (5 tentatives, 2s de delai)
@@ -272,28 +341,34 @@ En cas de deconnexion USB, une popup apparait automatiquement :
 
 ---
 
-### 10. Données CSV enregistrées
+### 9. Données CSV enregistrées
 
 Les fichiers CSV sont sauvegardés automatiquement dans `gui/logs/`
 avec un nom horodaté :
+
+```
 gui/logs/
 └── 20260422005625.csv   ← YYYYMMDDHHMMSS.csv
+```
 
 #### Format des données
-timestamp,Voltage,Current,Temperature,Pressure
-0.0,4,1996,1282,3500
-0.0175,6,1994,1282,3500
-0.0319,8,1992,1282,3500
-0.0345,10,1990,1282,3500
+
+```
+timestamp,Humidity,Temperature,Luminosity,Channel_4
+0.0,52,21,97,0
+0.38,52,21,95,0
+0.76,52,21,97,0
+1.14,52,21,96,0
 ...
+```
 
 | Colonne | Description | Unité |
 |---------|-------------|-------|
 | `timestamp` | Temps relatif depuis le debut du stream | secondes |
-| `Voltage` | Canal 0 — increment 0 → 2000 | valeur ADC |
-| `Current` | Canal 1 — decrement 2000 → 0 | valeur ADC |
-| `Temperature` | Canal 2 — valeur fixe 1282 | valeur ADC |
-| `Pressure` | Canal 3 — valeur fixe 3500 | valeur ADC |
+| `Humidity` | Canal 0 — DHT11 humidite | % |
+| `Temperature` | Canal 1 — DHT11 temperature | °C |
+| `Luminosity` | Canal 2 — BH1750 luminosite | lux |
+| `Channel_4` | Canal 3 — libre | — |
 
 > Le dossier `gui/logs/` est ignore par Git (`.gitignore`).
 
@@ -301,28 +376,44 @@ timestamp,Voltage,Current,Temperature,Pressure
 ---
 
 
+### 10. Dashboard Grafana
+
+![Grafana Dashboard](docs/screenshots/Grafana_Capture2.png)
+
+Accédez au dashboard via `http://localhost:3000` :
+
+| Panel | Capteur | Couleur | Valeur exemple |
+|-------|---------|---------|----------------|
+| Luminosité (lux) | BH1750 | Bleu | 0 — 1500 lux |
+| Température (°C) | DHT11 | Orange | ~20 °C |
+| Humidité (%) | DHT11 | Vert | 58 — 64 % |
+
+> Documentation complète : [`docs/influxdb_grafana.md`](docs/influxdb_grafana.md)
+
 ## Protocole de communication UART
 
 ### Paramètres de la liaison série
 
-| Paramètre       | Valeur                  |
-|-----------------|-------------------------|
-| Interface       | USART2 (PA2=TX, PA3=RX) |
-| Baudrate        | 115200                  |
-| Bits de données | 8                       |
-| Parité          | Aucune                  |
-| Bits de stop    | 1                       |
-| Reception       | Non bloquant (polling)  |
+| Paramètre | Valeur |
+|-----------|--------|
+| Interface | USART2 (PA2=TX, PA3=RX) |
+| Baudrate | 115200 |
+| Bits de données | 8 |
+| Parité | Aucune |
+| Bits de stop | 1 |
+| Reception | Non bloquant (polling) |
 
 ---
 
 ### Machine à états STM32
+```
           '?'                    'A'
 WAIT_SYNC ──────────────► IDLE ──────────────► STREAMING
 ▲                       │  ▲                    │
 │          'P'          │  │       'S'          │
 └───────────────────────┘  └────────────────────┘
 'P'
+```
 
 | Etat | LED | Description |
 |------|-----|-------------|
@@ -356,22 +447,29 @@ WAIT_SYNC ──────────────► IDLE ──────�
 
 ---
 
-### Format de la trame de données
+## Canaux de données
+
+| Canal | Capteur | Mesure | Broche | Exemple |
+|-------|---------|--------|--------|---------|
+| `val1` | DHT11 | Humidité | PC0 (1-Wire) | 52 % |
+| `val2` | DHT11 | Température | PC0 (1-Wire) | 21 °C |
+| `val3` | BH1750FVI | Luminosité | PB6/PB7 (I2C) | 97 lux |
+| `val4` | Libre | — | — | 0 |
+
+### Trame UART
+
 #D#val1#val2#val3#val4#val5#\n
 
-| Champ | Description |
-|-------|-------------|
-| `D` | Marqueur de trame de donnees |
-| `val1` | Canal 0 — Voltage |
-| `val2` | Canal 1 — Current |
-| `val3` | Canal 2 — Temperature |
-| `val4` | Canal 3 — Pressure |
-| `val5` | Controle integrite = somme des chiffres decimaux |
 
-#### Exemple
-#D#206#157#1282#7677#14#\n
-val5 = len("206") + len("157") + len("1282") + len("7677")
-= 3 + 3 + 4 + 4
-= 14
+**Exemple :**
+
+#D#52#21#97#0#7#\n
+
+val1 = 52   → Humidite 52%
+val2 = 21   → Temperature 21°C
+val3 = 97   → Luminosite 97 lux
+val4 = 0    → libre
+val5 = 7    → integrite (nb chiffres : 2+2+2+1=7)
+
 
 > Documentation complète : [`docs/protocol.md`](docs/protocol.md)
