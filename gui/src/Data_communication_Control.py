@@ -99,7 +99,7 @@ class DataMaster:
         }
 
         self.ChannelName = {
-            "Ch0": "Humidity",      "Ch1": "Temperature",  "Ch2": "Luminosity",
+            "Ch0": "Humidity (%)",      "Ch1": "Temperature (°C)",  "Ch2": "Luminosity (lux)",
             "Ch3": "Channel_4",     "Ch4": "Channel_5",    "Ch5": "Channel_6",
             "Ch6": "Channel_7",     "Ch7": "Channel_8",
         }
