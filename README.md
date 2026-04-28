@@ -200,6 +200,23 @@ Résultat attendu :
 | `make clean` | Suppression des fichiers compilés |
 | `make debug-server` | Lancement serveur GDB |
 
+
+---
+
+### Capteurs intégrés dans le firmware
+
+#### DHT11 — Température + Humidité
+- Protocole **1-Wire** sur broche **PC0**
+- Lecture toutes les **2 secondes** via `systick_get_tick()`
+- Driver complet : [`docs/dht11_driver.md`](docs/dht11_driver.md)
+
+#### BH1750FVI — Luminosité
+- Protocole **I2C** sur broches **PB6 (SCL) / PB7 (SDA)**
+- Adresse I2C : `0x23` (ADD = GND)
+- Mode **ONE_TIME_H_RES_MODE** — mesure déclenchée à chaque lecture
+- Driver complet : [`docs/bh1750_driver.md`](docs/bh1750_driver.md)
+
+
 ### 3. Interface graphique Python
 
 ```bash
