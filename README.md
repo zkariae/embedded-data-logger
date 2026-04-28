@@ -1,6 +1,6 @@
 <div align="center">
 
-# embedded-data-logger
+# Embedded Data Logger
 
 ![Build](https://gitlab.com/z_benakka193/embedded-data-logger/badges/main/pipeline.svg)
 ![Version](https://img.shields.io/badge/version-v3.0.0-green)
@@ -136,13 +136,69 @@ cd embedded-data-logger
 
 ```bash
 cd firmware
+```
 
-# Compiler
-make
+#### Compilation
 
-# Flasher la carte
+```bash
+# Mode RELEASE (par défaut)
+make clean && make
+
+# Mode DEBUG
+make clean && make BUILD=debug
+```
+
+#### Résultat attendu
+
+```
+[INFO] Build mode : RELEASE
+[CC]   src/main.c
+[CC]   src/uart.c
+[CC]   src/gpio.c
+[CC]   src/systick.c
+[CC]   src/iwdg.c
+[CC]   src/dht11.c
+[CC]   src/bh1750.c
+[CC]   src/system_stm32f4xx.c
+[AS]   startup/startup_stm32f407.s
+[LD]   build/bin/embedded-data-logger.elf
+[HEX]  build/bin/embedded-data-logger.hex
+   text    data     bss     dec     hex filename
+   6552       4      96    6652    19fc build/bin/embedded-data-logger.elf
+```
+
+#### Flash de la carte
+
+```bash
+# Connecter la carte STM32F407VG-Discovery via ST-Link USB
 make flash
 ```
+
+#### Vérification via minicom
+
+```bash
+# Ouvrir le port série
+minicom -D /dev/ttyUSB0 -b 115200
+```
+
+Résultat attendu :
+
+```
+[INFO] === embedded-data-logger ===
+[INFO] DHT11 : initialise sur PC0 (TIM2 1MHz)
+[INFO] BH1750 : init OK
+[INFO] En attente de synchronisation...
+```
+
+#### Commandes Makefile disponibles
+
+| Commande | Description |
+|----------|-------------|
+| `make` | Compilation RELEASE |
+| `make BUILD=debug` | Compilation DEBUG |
+| `make flash` | Flash via OpenOCD ST-Link |
+| `make clean` | Suppression des fichiers compilés |
+| `make debug-server` | Lancement serveur GDB |
 
 ### 3. Interface graphique Python
 
