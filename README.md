@@ -3,7 +3,7 @@
 # Embedded Data Logger
 
 ![Build](https://gitlab.com/z_benakka193/embedded-data-logger/badges/main/pipeline.svg)
-![Version](https://img.shields.io/badge/version-v3.0.0-green)
+![Version](https://img.shields.io/badge/version-v3.1.0-green)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Python](https://img.shields.io/badge/python-3.10-blue)
 ![STM32](https://img.shields.io/badge/STM32-F407VG-red)
