@@ -22,3 +22,4 @@ gui/**/__pycache__/
 # --- GUI : logs et fichiers CSV generes ---
 gui/logs/
 *.csv
+*:Zone.Identifier
