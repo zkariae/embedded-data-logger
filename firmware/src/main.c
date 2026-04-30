@@ -295,13 +295,14 @@ static void handle_uart_command(char cmd)
  */
 static void send_data_frame(void)
 {
-    static uint32_t dht11_counter = 0;
+    static uint32_t last_dht11_ms = 0;
+    uint32_t now_ms = systick_get_tick(); /* systick en ms */
 
     /* Lire BH1750 — luminosite en lux */
     val3 = (int)bh1750_read_lux();
 
-    /* Lire DHT11 toutes les 200 iterations (min 2s entre lectures) */
-    if (dht11_counter == 0)
+    /* Lire DHT11 toutes les 2 secondes */
+    if ((now_ms - last_dht11_ms) >= 2000)
     {
         DHT11_Status_t ret = dht11_read(&dht11);
         switch (ret)
@@ -316,8 +317,8 @@ static void send_data_frame(void)
             default:
                 break;
         }
+        last_dht11_ms = now_ms;
     }
-    dht11_counter = (dht11_counter + 1) % 200;
 
     /* Calcul val5 : integrite de la trame */
     val5 = count_digits((unsigned long)val1)
