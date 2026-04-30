@@ -8,7 +8,6 @@ Il mesure l'intensité lumineuse ambiante en **lux** avec une résolution de 1 l
 ---
 
 ## Caractéristiques
-```
 
 | Paramètre | Valeur |
 |-----------|--------|
@@ -21,11 +20,11 @@ Il mesure l'intensité lumineuse ambiante en **lux** avec une résolution de 1 l
 | Tension | 3.3V / 5V |
 | Adresse I2C | `0x23` (ADD=GND) ou `0x5C` (ADD=VCC) |
 | Temps de mesure | 120 — 180 ms (mode haute résolution) |
-```
+
 ---
 
 ## Connexion matérielle
-```
+
 | BH1750 | STM32F407VG | Description |
 |--------|-------------|-------------|
 | VCC | 3.3V | Alimentation |
@@ -33,22 +32,19 @@ Il mesure l'intensité lumineuse ambiante en **lux** avec une résolution de 1 l
 | SDA | PB7 (I2C1_SDA, AF4) | Données |
 | SCL | PB6 (I2C1_SCL, AF4) | Horloge |
 | ADD | GND | Adresse I2C = 0x23 |
-```
+
 ### Résistances pull-up
 
 Le bus I2C nécessite des résistances pull-up externes :
-
-```
 3.3V ──┬── 4.7kΩ ──── SDA (PB7)
-       └── 4.7kΩ ──── SCL (PB6)
-```
+└── 4.7kΩ ──── SCL (PB6)
 
 > Sans pull-up, le bus I2C ne fonctionne pas !
 
 ---
 
 ## Configuration I2C1
-```
+
 | Paramètre | Valeur | Calcul |
 |-----------|--------|--------|
 | APB1 clock | 16 MHz (HSI) | - |
@@ -56,11 +52,10 @@ Le bus I2C nécessite des résistances pull-up externes :
 | CCR | 80 | 16MHz / (2 × 100kHz) |
 | TRISE | 17 | (1000ns / 62.5ns) + 1 |
 | GPIO | PB6/PB7 | AF4, open-drain, pull-up |
-```
+
 ---
 
 ## Architecture du driver
-```
 bh1750.h / bh1750.c
 │
 ├── Fonctions privees I2C
@@ -74,7 +69,7 @@ bh1750.h / bh1750.c
 └── Interface publique
 ├── bh1750_init()      — initialisation I2C + capteur
 └── bh1750_read_lux()  — lecture luminosite en lux
-```
+
 ---
 
 ## Interface publique
@@ -134,14 +129,14 @@ Attendre RXNE → lire LSB
 ---
 
 ## Commandes BH1750
-```
+
 | Commande | Code | Description |
 |----------|------|-------------|
 | `POWER_ON` | `0x01` | Mise sous tension |
 | `RESET` | `0x07` | Reset registre données |
 | `CONT_H_RES_MODE` | `0x10` | Mesure continue haute résolution |
 | `ONE_TIME_H_RES_MODE` | `0x20` | Mesure unique haute résolution |
-```
+
 > Le driver utilise `ONE_TIME_H_RES_MODE` — une mesure est déclenchée à chaque appel de `bh1750_read_lux()`.
 
 ---
@@ -196,20 +191,19 @@ int main(void)
 ---
 
 ## Résultats de test
-```
+
 | Condition | Valeur mesurée |
 |-----------|----------------|
 | Bureau éclairé | ~87 — 100 lux |
 | Lumière directe | > 1000 lux |
 | Obscurité | ~0 lux |
-```
+
 ---
 
 ## Fichiers
-```
+
 | Fichier | Description |
 |---------|-------------|
 | `firmware/include/bh1750.h` | Déclarations, registres, interface publique |
 | `firmware/src/bh1750.c` | Implémentation complète |
 | `docs/bh1750_driver.md` | Documentation (ce fichier) |
-```
