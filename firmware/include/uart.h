@@ -4,9 +4,12 @@
 #include <stdint.h>
 
 /*==============================================================
-  Adresses des registres USART2
+  Adresses des registres USART2 (utilise les mocks si TEST_HOST)
   PA2 = TX, PA3 = RX
 ==============================================================*/
+#ifdef TEST_HOST
+#include "mock_hw.h"
+#else
 #define RCC_BASE    0x40023800UL
 #define RCC_AHB1ENR (*(volatile uint32_t *)(RCC_BASE + 0x30UL))
 #define RCC_APB1ENR (*(volatile uint32_t *)(RCC_BASE + 0x40UL))
@@ -20,6 +23,7 @@
 #define USART2_DR   (*(volatile uint32_t *)(USART2_BASE + 0x04UL))
 #define USART2_BRR  (*(volatile uint32_t *)(USART2_BASE + 0x08UL))
 #define USART2_CR1  (*(volatile uint32_t *)(USART2_BASE + 0x0CUL))
+#endif /* TEST_HOST */
 
 /* Bits USART_SR */
 #define USART_SR_TXE  (1UL << 7) /* TX buffer empty    */
