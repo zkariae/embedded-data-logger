@@ -83,4 +83,12 @@ void bh1750_init(void);
  */
 uint16_t bh1750_read_lux(void);
 
+/**
+ * @brief  Calcule la valeur de lux à partir des octets MSB et LSB.
+ * @param  msb : octet de poids fort
+ * @param  lsb : octet de poids faible
+ * @return Valeur en lux (calcul : raw * 10 / 12)
+ */
+uint16_t bh1750_calculate_lux(uint8_t msb, uint8_t lsb);
+
 #endif /* BH1750_H */

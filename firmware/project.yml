@@ -1,0 +1,38 @@
+:project:
+  :name: embedded-data-logger-firmware-tests
+  :build_root: build/test
+  :release_build: false
+
+:paths:
+  :test:
+    - test
+  :source:
+    - src
+  :include:
+    - include
+    - Unity/src
+  :libraries:
+    - Unity/src
+
+:defines:
+  :common: &common_defines
+    - UNITY_INCLUDE_CONFIG_H
+    - TEST_HOST
+    - STM32F407xx
+  :test:
+    - *common_defines
+  :source:
+    - *common_defines
+
+:flags:
+  :test:
+    :add:
+      - -Wall
+      - -Wextra
+      - -Iinclude
+      - -IUnity/src
+
+:plugins:
+  :enabled:
+    - stdout_pretty_tests_report
+    - xml_tests_report
