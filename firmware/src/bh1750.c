@@ -17,6 +17,11 @@
 #include "systick.h"
 #include "log.h"
 
+#ifdef TEST_HOST
+/* En mode test, on expose les fonctions internes pour les tester */
+uint16_t bh1750_calculate_lux(uint8_t msb, uint8_t lsb);
+#endif
+
 /* ------------------------------------------------------------------
  * Constantes privees
  * ------------------------------------------------------------------ */
@@ -233,5 +238,13 @@ uint16_t bh1750_read_lux(void)
     lsb = (uint8_t)(I2C1_DR & 0xFF);
 
     /* Conversion : lux = raw / 1.2 = raw * 10 / 12 */
+    return bh1750_calculate_lux(msb, lsb);
+}
+
+/* ------------------------------------------------------------------
+ * Fonction de calcul de lux (testable indépendamment)
+ * ------------------------------------------------------------------ */
+uint16_t bh1750_calculate_lux(uint8_t msb, uint8_t lsb)
+{
     return (uint16_t)(((uint16_t)((msb << 8) | lsb)) * 10U / 12U);
 }

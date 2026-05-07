@@ -66,6 +66,12 @@ embedded-data-logger/
 │   ├── linker/
 │   │   └── STM32F407VGTx.ld           # Script de linkage (FLASH 1024K / RAM 192K)
 │   ├── Makefile                       # Build GCC + OpenOCD + GDB
+│   ├── Makefile.test                  # Tests unitaires (hôte, gcc)
+│   ├── test/                          # Tests unitaires firmware
+│   │   ├── test_bh1750.c              # Tests du driver BH1750
+│   │   ├── mock_hw.h / mock_hw.c      # Simulation registres STM32
+│   │   ├── test_stubs.c               # Stubs pour dépendances
+│   │   └── docs/                      # Documentation des tests
 │   └── openocd.cfg                    # Configuration ST-Link SWD
 │
 ├── gui/                               # Interface graphique Python
@@ -199,6 +205,35 @@ Résultat attendu :
 | `make flash` | Flash via OpenOCD ST-Link |
 | `make clean` | Suppression des fichiers compilés |
 | `make debug-server` | Lancement serveur GDB |
+
+
+#### Tests unitaires du firmware
+
+```bash
+cd firmware
+make -f Makefile.test test
+```
+
+Les tests sont exécutés **sur la machine hôte** (pas sur le STM32). Les registres matériels STM32 sont simulés par des mocks, les dépendances (delay, UART) sont remplacées par des stubs.
+
+Résultat attendu :
+
+```
+test_bh1750_calculate_lux_should_return_correct_value:PASS
+test_bh1750_calculate_lux_minimum_value:PASS
+test_bh1750_calculate_lux_maximum_value:PASS
+...
+-----------------------
+6 Tests 0 Failures 0 Ignored
+OK
+```
+
+> Documentation complète des tests : [`firmware/test/docs/BH1750_UNIT_TESTS.md`](firmware/test/docs/BH1750_UNIT_TESTS.md)
+
+| Commande | Description |
+|----------|-------------|
+| `make -f Makefile.test test` | Compilation + exécution des tests |
+| `make -f Makefile.test clean` | Nettoyage des fichiers compilés |
 
 
 ---
