@@ -1,0 +1,43 @@
+# Makefile pour les tests unitaires firmware (Host-based)
+# Utilise Unity et simule les registres STM32
+
+CC = gcc
+CFLAGS = -Wall -Wextra -Iinclude -IUnity/src -Itest -DTEST_HOST -DSTM32F407xx
+LDFLAGS =
+
+# Sources du projet à tester
+SRC_FIRMWARE = src/bh1750.c
+SRC_TEST = test/test_bh1750.c test/mock_hw.c test/test_stubs.c
+SRC_UNITY = Unity/src/unity.c
+
+# Objets
+OBJ = $(SRC_FIRMWARE:.c=.o) $(SRC_TEST:.c=.o) $(SRC_UNITY:.c=.o)
+
+# Exécutable de test
+TEST_BIN = build/test/bh1750_tests
+
+.PHONY: all test clean
+
+all: test
+
+test: $(TEST_BIN)
+	@echo "Exécution des tests unitaires BH1750..."
+	@./$(TEST_BIN)
+
+$(TEST_BIN): $(OBJ)
+	@mkdir -p $(dir $(TEST_BIN))
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+clean:
+	rm -f $(OBJ) $(TEST_BIN)
+	rm -rf build/test
+
+# Help
+help:
+	@echo "Targets:"
+	@echo "  test    - Compile et exécute les tests unitaires"
+	@echo "  clean   - Nettoie les fichiers générés"
+	@echo "  help    - Affiche cette aide"
