@@ -265,6 +265,36 @@ cp config/com_config.json.example config/com_config.json
 cp config/users.json.example      config/users.json
 ```
 
+#### Tests d'intégration du pipeline de données
+
+```bash
+cd gui
+python3 -m pytest tests/ -v
+```
+
+Les tests d'intégration valident le pipeline de données **sur machine hôte** sans matériel STM32 :
+
+1. **`STM32Simulator`** génère des trames UART conformes au protocole
+2. **Parsing** : validation des formats de trames (#D#, sync, stop, disconnect)
+3. **Client InfluxDB** : mocké via `unittest.mock` pour éviter une base réelle
+4. **CSV** : écriture/lecture de fichiers temporaires
+5. **Récupération d'erreurs** : déconnexion/reconnexion, trames malformées, overflow
+
+Résultat attendu :
+
+```
+tests/test_integration.py::TestSTM32Simulator::test_generate_sync_response_format PASSED
+...
+tests/test_influx_client.py::TestInfluxClientSendData::test_send_data_valid PASSED
+...
+-------------------------------
+45 passed in 0.55s
+```
+
+> Documentation complète des tests : [`gui/tests/docs/INTEGRATION_TESTS.md`](gui/tests/docs/INTEGRATION_TESTS.md)
+
+---
+
 ### 4. Stack Cloud (InfluxDB + Grafana)
 
 ```bash
